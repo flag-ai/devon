@@ -41,5 +41,8 @@ site/
 # Claude
 .claude/
 
+# Frontend build output
+src/devon/ui/static/
+
 # Project specific
 *.log
