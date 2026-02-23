@@ -114,6 +114,26 @@ class TestRunSetup:
         assert app.state.settings.get("secrets.api_key") == key
 
     @pytest.mark.anyio
+    async def test_500_and_rollback_on_write_failure(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("DEVON_API_KEY", raising=False)
+        app = _make_app(monkeypatch, tmp_path)
+        # Make config dir read-only to trigger PermissionError on save
+        app.state.settings.config_path.parent.mkdir(parents=True, exist_ok=True)
+        app.state.settings.config_path.parent.chmod(0o444)
+        transport = ASGITransport(app=app)
+        try:
+            async with AsyncClient(transport=transport, base_url="http://test") as c:
+                resp = await c.post("/api/v1/setup")
+                assert resp.status_code == 500
+                assert "permissions" in resp.json()["detail"]
+                # Key should be rolled back — setup still needed
+                status_resp = await c.get("/api/v1/setup/status")
+                assert status_resp.json()["needs_setup"] is True
+        finally:
+            # Restore permissions for cleanup
+            app.state.settings.config_path.parent.chmod(0o755)
+
+    @pytest.mark.anyio
     async def test_generated_key_authenticates(self, tmp_path, monkeypatch):
         monkeypatch.delenv("DEVON_API_KEY", raising=False)
         app = _make_app(monkeypatch, tmp_path)

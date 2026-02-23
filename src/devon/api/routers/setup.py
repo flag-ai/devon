@@ -38,6 +38,17 @@ async def run_setup(settings: Settings = Depends(get_settings)):
         )
 
     api_key = secrets.token_urlsafe(32)
-    settings.update({"secrets": {"api_key": api_key}})
+
+    try:
+        settings.update({"secrets": {"api_key": api_key}})
+    except OSError:
+        # Roll back in-memory state so the setup can be retried.
+        # Access _config directly to avoid another failed save().
+        secrets_dict = settings._config.get("secrets", {})
+        secrets_dict["api_key"] = None
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to persist API key — check config directory permissions",
+        )
 
     return SetupKeyResponse(api_key=api_key)
