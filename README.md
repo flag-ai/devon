@@ -2,7 +2,7 @@
 
 > *"DEVON manages the models. KITT tests them."*
 
-CLI tool and REST API for discovering, downloading, and managing LLM models from HuggingFace and other sources.
+CLI tool, REST API, and Web UI for discovering, downloading, and managing LLM models from HuggingFace and other sources.
 
 [**Full Documentation**](https://kirizan.github.io/devon/) | [**CLI Reference**](https://kirizan.github.io/devon/reference/cli/)
 
@@ -14,8 +14,9 @@ CLI tool and REST API for discovering, downloading, and managing LLM models from
 - **KITT integration** — export model paths for inference testing
 - **Source plugins** — extensible architecture for model sources
 - **YAML configuration** — deep-merged config with sensible defaults
+- **Web UI** — browser-based dashboard for search, downloads, model management, and configuration
 - **REST API** — FastAPI server for remote model management
-- **Docker ready** — containerize with a single volume mount
+- **Docker ready** — containerize with a single volume mount (Web UI included)
 
 ## Quick Start
 
@@ -114,6 +115,10 @@ devon serve --host 0.0.0.0 --port 9000
 | GET | `/api/v1/status` | Storage stats |
 | POST | `/api/v1/clean` | Clean unused models |
 | POST | `/api/v1/export` | Export model list |
+| GET | `/api/v1/config` | Get configuration (secrets masked) |
+| PUT | `/api/v1/config` | Update configuration |
+| GET | `/api/v1/config/setup-status` | First-run setup status |
+| PUT | `/api/v1/config/secrets` | Set HF token / API key (write-only) |
 
 ### Authentication
 
@@ -158,13 +163,42 @@ curl -X POST http://localhost:8000/api/v1/downloads \
 curl http://localhost:8000/api/v1/status
 ```
 
+## Web UI
+
+Devon includes a browser-based dashboard for managing models without the CLI. When `devon serve` starts, the Web UI is available at the root URL (e.g. `http://localhost:8000/`).
+
+**Pages:**
+
+| Page | Description |
+|------|-------------|
+| Dashboard | Storage stats, recent models, quick search |
+| Search | Full search with all filter controls |
+| Models | Browse, inspect, and delete local models |
+| Downloads | Download models by ID or URL |
+| Settings | Configure all settings and secrets from the browser |
+
+On first launch (no config file on disk), a setup banner prompts you to configure storage path and HuggingFace token. Devon works immediately with defaults — configuration is recommended but not required.
+
+### Building the frontend
+
+The Web UI is built from `frontend/` (React + Vite + TypeScript + Tailwind CSS). The Docker image builds it automatically. For local development:
+
+```bash
+# Build the UI into src/devon/ui/static/
+make build-ui
+
+# Or run the Vite dev server with API proxy
+make dev-ui    # UI at http://localhost:5173, proxies /api to :8000
+```
+
 ## Docker
 
 ### Build and run
 
 ```bash
 docker compose up -d
-curl http://localhost:8000/health
+curl http://localhost:8000/health   # API health check
+# Open http://localhost:8000/ in a browser for the Web UI
 ```
 
 ### Configuration
