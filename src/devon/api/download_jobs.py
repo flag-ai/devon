@@ -68,7 +68,11 @@ class DownloadJobManager:
     def has_active_job(self, source: str, model_id: str) -> Optional[DownloadJob]:
         """Return an active (downloading) job for the given source+model, or None."""
         for job in self._jobs.values():
-            if job.source == source and job.model_id == model_id and job.status == JobStatus.downloading:
+            if (
+                job.source == source
+                and job.model_id == model_id
+                and job.status == JobStatus.downloading
+            ):
                 return job
         return None
 
