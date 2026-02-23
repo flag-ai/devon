@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
     allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins or ["http://localhost:*"],
+        allow_origins=allowed_origins or ["http://localhost:5173", "http://localhost:8000"],
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
         allow_credentials=False,
@@ -95,9 +95,12 @@ def create_app() -> FastAPI:
         @app.get("/{path:path}")
         async def spa_fallback(request: Request, path: str):
             """Serve static files or fall back to index.html for SPA routes."""
-            file = STATIC_DIR / path
-            if file.is_file():
-                return FileResponse(file)
+            static_root = STATIC_DIR.resolve()
+            safe_path = (STATIC_DIR / path).resolve()
+            if not safe_path.is_relative_to(static_root):
+                return FileResponse(STATIC_DIR / "index.html")
+            if safe_path.is_file():
+                return FileResponse(safe_path)
             return FileResponse(STATIC_DIR / "index.html")
 
     return app

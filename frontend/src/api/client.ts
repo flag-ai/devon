@@ -1,10 +1,10 @@
 const BASE_URL = "";
 
-let apiKey: string | null = localStorage.getItem("devon_api_key");
+let apiKey: string | null = sessionStorage.getItem("devon_api_key");
 
 export function setApiKey(key: string) {
   apiKey = key;
-  localStorage.setItem("devon_api_key", key);
+  sessionStorage.setItem("devon_api_key", key);
 }
 
 export function getApiKey(): string | null {
@@ -13,7 +13,7 @@ export function getApiKey(): string | null {
 
 export function clearApiKey() {
   apiKey = null;
-  localStorage.removeItem("devon_api_key");
+  sessionStorage.removeItem("devon_api_key");
 }
 
 async function request<T>(
