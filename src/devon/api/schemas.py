@@ -102,6 +102,27 @@ class DownloadResponse(BaseModel):
     size_bytes: int
 
 
+class DownloadJobResponse(BaseModel):
+    id: str
+    model_id: str
+    source: str
+    status: str
+    started_at: str
+    completed_at: Optional[str] = None
+    error: Optional[str] = None
+    result: Optional[DownloadResponse] = None
+
+
+class DownloadJobListResponse(BaseModel):
+    count: int
+    jobs: List[DownloadJobResponse]
+
+
+class DownloadStartResponse(BaseModel):
+    job: Optional[DownloadJobResponse] = None
+    cached: Optional[DownloadResponse] = None
+
+
 # --- Storage ---
 
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { searchModels, downloadModel, type SearchParams, type ModelResult } from "../api/client";
+import { Link } from "react-router-dom";
+import { searchModels, startDownload, type SearchParams, type ModelResult } from "../api/client";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -33,7 +34,7 @@ export default function Search() {
   const [activeSearch, setActiveSearch] = useState<SearchParams | null>(
     searchParams.get("query") ? { query: searchParams.get("query") ?? undefined } : null,
   );
-  const [downloading, setDownloading] = useState<Record<string, "pending" | "done" | "error">>({});
+  const [downloading, setDownloading] = useState<Record<string, "pending" | "started" | "done" | "error">>({});
   const [dlErrors, setDlErrors] = useState<Record<string, string>>({});
 
   const queryClient = useQueryClient();
@@ -45,11 +46,16 @@ export default function Search() {
   });
 
   const dlMut = useMutation({
-    mutationFn: downloadModel,
-    onSuccess: (_data, variables) => {
-      setDownloading((prev) => ({ ...prev, [variables.model_id]: "done" }));
-      queryClient.invalidateQueries({ queryKey: ["models"] });
-      queryClient.invalidateQueries({ queryKey: ["storage-status"] });
+    mutationFn: startDownload,
+    onSuccess: (data, variables) => {
+      if (data.cached) {
+        setDownloading((prev) => ({ ...prev, [variables.model_id]: "done" }));
+        queryClient.invalidateQueries({ queryKey: ["models"] });
+        queryClient.invalidateQueries({ queryKey: ["storage-status"] });
+      } else {
+        setDownloading((prev) => ({ ...prev, [variables.model_id]: "started" }));
+        queryClient.invalidateQueries({ queryKey: ["download-jobs"] });
+      }
     },
     onError: (err, variables) => {
       setDownloading((prev) => ({ ...prev, [variables.model_id]: "error" }));
@@ -265,6 +271,13 @@ export default function Search() {
                     <td className="px-4 py-2 text-right">
                       {downloading[r.model_id] === "done" ? (
                         <span className="text-xs text-ctp-green">Downloaded</span>
+                      ) : downloading[r.model_id] === "started" ? (
+                        <Link
+                          to="/downloads"
+                          className="text-xs text-ctp-blue hover:underline"
+                        >
+                          View in Downloads
+                        </Link>
                       ) : downloading[r.model_id] === "error" ? (
                         <div className="flex flex-col items-end gap-1">
                           {dlErrors[r.model_id] && (
@@ -280,7 +293,7 @@ export default function Search() {
                           </button>
                         </div>
                       ) : downloading[r.model_id] === "pending" ? (
-                        <span className="text-xs text-ctp-blue animate-pulse">Downloading...</span>
+                        <span className="text-xs text-ctp-blue animate-pulse">Starting...</span>
                       ) : (
                         <button
                           onClick={() => handleDownload(r)}

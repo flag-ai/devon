@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from devon.api.download_jobs import DownloadJobManager
 from devon.config.settings import Settings
 from devon.storage.organizer import ModelStorage
 from devon.ui import STATIC_DIR
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     app.state.settings = settings
     app.state.storage = storage
+    app.state.download_jobs = DownloadJobManager()
 
     yield
 
