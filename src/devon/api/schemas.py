@@ -157,6 +157,17 @@ class SecretsUpdateRequest(BaseModel):
     api_key: Optional[str] = None
 
 
+# --- Setup (first-run key provisioning) ---
+
+
+class SetupCheckResponse(BaseModel):
+    needs_setup: bool
+
+
+class SetupKeyResponse(BaseModel):
+    api_key: str
+
+
 # --- Errors ---
 
 

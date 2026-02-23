@@ -52,6 +52,34 @@ export class ApiError extends Error {
   }
 }
 
+// --- Setup (first-run, no auth) ---
+
+export interface SetupCheckResponse {
+  needs_setup: boolean;
+}
+
+export interface SetupKeyResponse {
+  api_key: string;
+}
+
+export async function getSetupCheck(): Promise<SetupCheckResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/setup/status`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail ?? "Request failed");
+  }
+  return res.json();
+}
+
+export async function runSetup(): Promise<SetupKeyResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/setup`, { method: "POST" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail ?? "Request failed");
+  }
+  return res.json();
+}
+
 // --- Health ---
 
 export interface HealthResponse {
