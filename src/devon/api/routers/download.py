@@ -1,12 +1,13 @@
 """Async model download endpoints with job tracking."""
 
 import asyncio
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from devon.api.dependencies import get_source, get_storage, verify_api_key
-from devon.api.download_jobs import DownloadJobManager
+from devon.api.download_jobs import DownloadJobManager, JobStatus
 from devon.api.schemas import (
     DownloadJobListResponse,
     DownloadJobResponse,
@@ -15,6 +16,8 @@ from devon.api.schemas import (
     DownloadStartResponse,
 )
 from devon.storage.organizer import ModelStorage
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(verify_api_key)])
 
@@ -45,7 +48,13 @@ def _get_job_manager(request: Request) -> DownloadJobManager:
     return request.app.state.download_jobs
 
 
-@router.post("/downloads")
+def _launch_download(jobs, job, source_impl, storage) -> None:
+    """Create a background task for a download and hold the reference."""
+    task = asyncio.create_task(jobs.run_download(job, source_impl, storage))
+    task.add_done_callback(lambda t: t.result() if not t.cancelled() else None)
+
+
+@router.post("/downloads", response_model=DownloadStartResponse)
 async def start_download(
     body: DownloadRequest,
     request: Request,
@@ -84,9 +93,9 @@ async def start_download(
             content=DownloadStartResponse(job=_job_to_response(active)).model_dump(),
         )
 
-    # Validate model exists (fast HF API call) before creating a job
+    # Validate model exists before creating a job
     try:
-        source_impl.get_model_info(body.model_id)
+        await asyncio.to_thread(source_impl.get_model_info, body.model_id)
     except Exception as exc:
         raise HTTPException(status_code=404, detail=f"Model not found: {exc}")
 
@@ -97,7 +106,7 @@ async def start_download(
         include_patterns=body.include_patterns,
         force=body.force,
     )
-    asyncio.create_task(jobs.run_download(job, source_impl, storage))
+    _launch_download(jobs, job, source_impl, storage)
 
     return JSONResponse(
         status_code=202,
@@ -137,14 +146,14 @@ async def restart_download(
     old_job = jobs.get_job(job_id)
     if not old_job:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
-    if old_job.status.value != "failed":
+    if old_job.status != JobStatus.failed:
         raise HTTPException(status_code=400, detail="Only failed jobs can be restarted")
 
     source_impl = get_source(old_job.source)
 
     # Validate model still exists
     try:
-        source_impl.get_model_info(old_job.model_id)
+        await asyncio.to_thread(source_impl.get_model_info, old_job.model_id)
     except Exception as exc:
         raise HTTPException(status_code=404, detail=f"Model not found: {exc}")
 
@@ -154,6 +163,6 @@ async def restart_download(
         include_patterns=old_job.include_patterns,
         force=True,
     )
-    asyncio.create_task(jobs.run_download(new_job, source_impl, storage))
+    _launch_download(jobs, new_job, source_impl, storage)
 
     return DownloadStartResponse(job=_job_to_response(new_job))
