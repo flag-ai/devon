@@ -34,6 +34,7 @@ export default function Search() {
     searchParams.get("query") ? { query: searchParams.get("query") ?? undefined } : null,
   );
   const [downloading, setDownloading] = useState<Record<string, "pending" | "done" | "error">>({});
+  const [dlErrors, setDlErrors] = useState<Record<string, string>>({});
 
   const queryClient = useQueryClient();
 
@@ -50,8 +51,9 @@ export default function Search() {
       queryClient.invalidateQueries({ queryKey: ["models"] });
       queryClient.invalidateQueries({ queryKey: ["storage-status"] });
     },
-    onError: (_err, variables) => {
+    onError: (err, variables) => {
       setDownloading((prev) => ({ ...prev, [variables.model_id]: "error" }));
+      setDlErrors((prev) => ({ ...prev, [variables.model_id]: (err as Error).message }));
     },
   });
 
@@ -264,12 +266,19 @@ export default function Search() {
                       {downloading[r.model_id] === "done" ? (
                         <span className="text-xs text-ctp-green">Downloaded</span>
                       ) : downloading[r.model_id] === "error" ? (
-                        <button
-                          onClick={() => handleDownload(r)}
-                          className="rounded bg-ctp-red/10 px-2.5 py-1 text-xs text-ctp-red hover:bg-ctp-red/20 transition-colors"
-                        >
-                          Retry
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          {dlErrors[r.model_id] && (
+                            <span className="text-xs text-ctp-red max-w-48 truncate" title={dlErrors[r.model_id]}>
+                              {dlErrors[r.model_id]}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handleDownload(r)}
+                            className="rounded bg-ctp-red/10 px-2.5 py-1 text-xs text-ctp-red hover:bg-ctp-red/20 transition-colors"
+                          >
+                            Retry
+                          </button>
+                        </div>
                       ) : downloading[r.model_id] === "pending" ? (
                         <span className="text-xs text-ctp-blue animate-pulse">Downloading...</span>
                       ) : (
