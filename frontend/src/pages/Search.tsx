@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { searchModels, type SearchParams, type ModelResult } from "../api/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { searchModels, startDownload, type SearchParams, type ModelResult } from "../api/client";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -33,12 +34,39 @@ export default function Search() {
   const [activeSearch, setActiveSearch] = useState<SearchParams | null>(
     searchParams.get("query") ? { query: searchParams.get("query") ?? undefined } : null,
   );
+  const [downloading, setDownloading] = useState<Record<string, "pending" | "started" | "done" | "error">>({});
+  const [dlErrors, setDlErrors] = useState<Record<string, string>>({});
+
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["search", activeSearch],
     queryFn: () => searchModels(activeSearch!),
     enabled: activeSearch !== null,
   });
+
+  const dlMut = useMutation({
+    mutationFn: startDownload,
+    onSuccess: (data, variables) => {
+      if (data.cached) {
+        setDownloading((prev) => ({ ...prev, [variables.model_id]: "done" }));
+        queryClient.invalidateQueries({ queryKey: ["models"] });
+        queryClient.invalidateQueries({ queryKey: ["storage-status"] });
+      } else {
+        setDownloading((prev) => ({ ...prev, [variables.model_id]: "started" }));
+        queryClient.invalidateQueries({ queryKey: ["download-jobs"] });
+      }
+    },
+    onError: (err, variables) => {
+      setDownloading((prev) => ({ ...prev, [variables.model_id]: "error" }));
+      setDlErrors((prev) => ({ ...prev, [variables.model_id]: (err as Error).message }));
+    },
+  });
+
+  function handleDownload(model: ModelResult) {
+    setDownloading((prev) => ({ ...prev, [model.model_id]: "pending" }));
+    dlMut.mutate({ model_id: model.model_id, source: model.source });
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -192,6 +220,7 @@ export default function Search() {
                   <th className="text-right px-4 py-2 font-medium">Size</th>
                   <th className="text-right px-4 py-2 font-medium">Downloads</th>
                   <th className="text-right px-4 py-2 font-medium">Likes</th>
+                  <th className="px-4 py-2 font-medium w-24"></th>
                 </tr>
               </thead>
               <tbody>
@@ -238,6 +267,41 @@ export default function Search() {
                     </td>
                     <td className="px-4 py-2 text-right text-ctp-subtext0">
                       {formatNumber(r.likes)}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      {downloading[r.model_id] === "done" ? (
+                        <span className="text-xs text-ctp-green">Downloaded</span>
+                      ) : downloading[r.model_id] === "started" ? (
+                        <Link
+                          to="/downloads"
+                          className="text-xs text-ctp-blue hover:underline"
+                        >
+                          View in Downloads
+                        </Link>
+                      ) : downloading[r.model_id] === "error" ? (
+                        <div className="flex flex-col items-end gap-1">
+                          {dlErrors[r.model_id] && (
+                            <span className="text-xs text-ctp-red max-w-48 truncate" title={dlErrors[r.model_id]}>
+                              {dlErrors[r.model_id]}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handleDownload(r)}
+                            className="rounded bg-ctp-red/10 px-2.5 py-1 text-xs text-ctp-red hover:bg-ctp-red/20 transition-colors"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      ) : downloading[r.model_id] === "pending" ? (
+                        <span className="text-xs text-ctp-blue animate-pulse">Starting...</span>
+                      ) : (
+                        <button
+                          onClick={() => handleDownload(r)}
+                          className="rounded bg-ctp-blue/10 px-2.5 py-1 text-xs text-ctp-blue hover:bg-ctp-blue/20 transition-colors"
+                        >
+                          Download
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

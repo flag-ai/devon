@@ -6,7 +6,6 @@ services:
     volumes:
       - "${DEVON_DATA_PATH:-devon-data}:/data"
     environment:
-      - DEVON_API_KEY=${DEVON_API_KEY:-}
       - HF_TOKEN=${HF_TOKEN:-}
     cap_drop:
       - ALL

@@ -14,11 +14,12 @@ RUN pip install --no-cache-dir poetry==1.8.* \
     && poetry config virtualenvs.in-project true
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock* ./
-RUN poetry install --no-interaction --no-ansi --extras api --without dev,docs
+COPY pyproject.toml poetry.lock* README.md ./
+RUN poetry install --no-interaction --no-ansi --extras api --without dev,docs --no-root
 
 COPY src/ src/
 COPY --from=frontend-builder /src/devon/ui/static src/devon/ui/static
+RUN poetry install --no-interaction --no-ansi --extras api --without dev,docs
 
 # ---- Runtime ----
 FROM python:3.12-slim

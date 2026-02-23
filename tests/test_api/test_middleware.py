@@ -42,7 +42,7 @@ class TestVerifyApiKey:
         async with AsyncClient(transport=transport, base_url="http://test") as c:
             resp = await c.get("/api/v1/config")
         assert resp.status_code == 503
-        assert "API key not configured" in resp.json()["detail"]
+        assert resp.json()["detail"] == "DEVON_SETUP_REQUIRED"
 
     @pytest.mark.anyio
     async def test_passthrough_when_disabled(self, tmp_path, monkeypatch):

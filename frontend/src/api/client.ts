@@ -52,6 +52,34 @@ export class ApiError extends Error {
   }
 }
 
+// --- Setup (first-run, no auth) ---
+
+export interface SetupCheckResponse {
+  needs_setup: boolean;
+}
+
+export interface SetupKeyResponse {
+  api_key: string;
+}
+
+export async function getSetupCheck(): Promise<SetupCheckResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/setup/status`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail ?? "Request failed");
+  }
+  return res.json();
+}
+
+export async function runSetup(): Promise<SetupKeyResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/setup`, { method: "POST" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail ?? "Request failed");
+  }
+  return res.json();
+}
+
 // --- Health ---
 
 export interface HealthResponse {
@@ -193,10 +221,54 @@ export interface DownloadResponse {
   size_bytes: number;
 }
 
-export const downloadModel = (req: DownloadRequest) =>
-  request<DownloadResponse>("/api/v1/downloads", {
+export interface DownloadJobResponse {
+  id: string;
+  model_id: string;
+  source: string;
+  status: "downloading" | "completed" | "failed";
+  started_at: string;
+  completed_at: string | null;
+  error: string | null;
+  result: DownloadResponse | null;
+}
+
+export interface DownloadJobListResponse {
+  count: number;
+  jobs: DownloadJobResponse[];
+}
+
+export interface DownloadStartResponse {
+  job: DownloadJobResponse | null;
+  cached: DownloadResponse | null;
+}
+
+export const startDownload = async (req: DownloadRequest): Promise<DownloadStartResponse> => {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+  const res = await fetch(`${BASE_URL}/api/v1/downloads`, {
     method: "POST",
+    headers,
     body: JSON.stringify(req),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail ?? "Request failed");
+  }
+
+  return res.json() as Promise<DownloadStartResponse>;
+};
+
+export const listDownloadJobs = () =>
+  request<DownloadJobListResponse>("/api/v1/downloads");
+
+export const getDownloadJob = (jobId: string) =>
+  request<DownloadJobResponse>(`/api/v1/downloads/${jobId}`);
+
+export const restartDownload = (jobId: string) =>
+  request<DownloadStartResponse>(`/api/v1/downloads/${jobId}/restart`, {
+    method: "POST",
   });
 
 // --- Storage ---

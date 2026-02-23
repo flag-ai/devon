@@ -107,11 +107,16 @@ devon serve --host 0.0.0.0 --port 9000
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check (no auth) |
+| GET | `/api/v1/setup/status` | Check if first-run setup is needed (no auth) |
+| POST | `/api/v1/setup` | Generate API key during first-run setup (no auth) |
 | GET | `/api/v1/search` | Search remote models |
 | GET | `/api/v1/models` | List local models |
 | GET | `/api/v1/models/{source}/{model_id}` | Model info (local + remote) |
 | DELETE | `/api/v1/models/{source}/{model_id}` | Remove a model |
-| POST | `/api/v1/downloads` | Download a model |
+| POST | `/api/v1/downloads` | Start a download (returns 200 cached or 202 accepted) |
+| GET | `/api/v1/downloads` | List all download jobs |
+| GET | `/api/v1/downloads/{job_id}` | Get download job status |
+| POST | `/api/v1/downloads/{job_id}/restart` | Restart a failed download |
 | GET | `/api/v1/status` | Storage stats |
 | POST | `/api/v1/clean` | Clean unused models |
 | POST | `/api/v1/export` | Export model list |
@@ -122,13 +127,15 @@ devon serve --host 0.0.0.0 --port 9000
 
 ### Authentication
 
-The `DEVON_API_KEY` environment variable controls authentication on all `/api/v1/*` endpoints:
+DEVON uses three-tier authentication on `/api/v1/*` endpoints (checked in order):
 
-| Value | Behavior |
-|-------|----------|
-| `DEVON_API_KEY=mysecretkey` | Requires `Authorization: Bearer mysecretkey` header on every request |
-| `DEVON_API_KEY=disable` | Explicit opt-out -- all requests allowed without a token (local dev only) |
-| *(unset / empty)* | Returns **503 Service Unavailable** with instructions to configure the key |
+| Tier | Source | Behavior |
+|------|--------|----------|
+| 1 | `DEVON_API_KEY` env var | Requires `Authorization: Bearer <key>` header. Set to `disable` to skip auth. |
+| 2 | Config file (`secrets.api_key`) | Same bearer token auth, key stored via first-run setup or `PUT /api/v1/config/secrets` |
+| 3 | Neither set | Returns **503** `DEVON_SETUP_REQUIRED` — triggers the Web UI first-run setup flow |
+
+On first launch with no API key configured, the Web UI walks you through setup at `POST /api/v1/setup`, which generates and persists a key automatically.
 
 ```bash
 # Production — require a bearer token
@@ -154,10 +161,13 @@ curl "http://localhost:8000/api/v1/search?provider=qwen&limit=3"
 # List local models
 curl http://localhost:8000/api/v1/models
 
-# Download a model
+# Start a download (returns 202 Accepted with job ID)
 curl -X POST http://localhost:8000/api/v1/downloads \
   -H "Content-Type: application/json" \
   -d '{"model_id": "Qwen/Qwen2.5-1.5B"}'
+
+# Check download progress
+curl http://localhost:8000/api/v1/downloads
 
 # Storage status
 curl http://localhost:8000/api/v1/status
@@ -174,10 +184,10 @@ Devon includes a browser-based dashboard for managing models without the CLI. Wh
 | Dashboard | Storage stats, recent models, quick search |
 | Search | Full search with all filter controls |
 | Models | Browse, inspect, and delete local models |
-| Downloads | Download models by ID or URL |
+| Downloads | Start downloads, track progress, restart failed jobs |
 | Settings | Configure all settings and secrets from the browser |
 
-On first launch (no config file on disk), a setup banner prompts you to configure storage path and HuggingFace token. Devon works immediately with defaults — configuration is recommended but not required.
+On first launch (no API key configured), the Web UI presents a setup flow that generates and stores an API key automatically. Devon works immediately with defaults — configuration is recommended but not required.
 
 ### Building the frontend
 

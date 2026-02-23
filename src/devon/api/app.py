@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from devon.api.download_jobs import DownloadJobManager
 from devon.config.settings import Settings
 from devon.storage.organizer import ModelStorage
 from devon.ui import STATIC_DIR
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     app.state.settings = settings
     app.state.storage = storage
+    app.state.download_jobs = DownloadJobManager()
 
     yield
 
@@ -75,6 +77,7 @@ def create_app() -> FastAPI:
 
     # Import routers here to avoid circular imports
     from devon.api.routers.health import router as health_router
+    from devon.api.routers.setup import router as setup_router
     from devon.api.routers.models import router as models_router
     from devon.api.routers.search import router as search_router
     from devon.api.routers.download import router as download_router
@@ -82,6 +85,7 @@ def create_app() -> FastAPI:
     from devon.api.routers.config import router as config_router
 
     app.include_router(health_router)
+    app.include_router(setup_router)
     app.include_router(models_router)
     app.include_router(search_router)
     app.include_router(download_router)

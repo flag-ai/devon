@@ -34,23 +34,26 @@ def get_source(source_name: str = "huggingface"):
 
 
 async def verify_api_key(
+    request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)] = None,
 ) -> None:
-    """Verify bearer token based on DEVON_API_KEY configuration.
+    """Verify bearer token using three-tier auth.
 
-    - Unset/empty: returns 503 telling the operator to configure the key.
-    - "disable": allows all requests (explicit opt-out for local dev).
-    - Any other value: requires a matching Bearer token.
+    1. DEVON_API_KEY env var set → use it ("disable" allows unauthenticated).
+    2. Env empty → check settings config file (secrets.api_key).
+    3. Neither → raise 503 DEVON_SETUP_REQUIRED (triggers first-run flow).
     """
     expected = os.environ.get("DEVON_API_KEY", "")
 
     if not expected:
+        # Tier 2: check config file
+        settings: Settings = request.app.state.settings
+        expected = settings.get("secrets.api_key") or ""
+
+    if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "API key not configured. Set DEVON_API_KEY to a secret value, "
-                "or set DEVON_API_KEY=disable to allow unauthenticated access."
-            ),
+            detail="DEVON_SETUP_REQUIRED",
         )
 
     if expected == "disable":

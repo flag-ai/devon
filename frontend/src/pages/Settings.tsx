@@ -108,7 +108,7 @@ export default function Settings() {
   const [hfToken, setHfToken] = useState("");
   const [apiKeyValue, setApiKeyValue] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["config"],
     queryFn: getConfig,
   });
@@ -139,11 +139,22 @@ export default function Settings() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div>
         <h2 className="text-2xl font-bold mb-4">Settings</h2>
         <p className="text-ctp-subtext0">Loading configuration...</p>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Settings</h2>
+        <div className="rounded-lg border border-ctp-red/30 bg-ctp-red/10 px-4 py-3 text-sm text-ctp-red">
+          Failed to load configuration: {error?.message ?? "Unknown error"}
+        </div>
       </div>
     );
   }

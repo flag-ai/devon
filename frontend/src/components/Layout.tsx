@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { clearApiKey } from "../api/client";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -52,6 +53,19 @@ export default function Layout() {
             </li>
           ))}
         </ul>
+
+        <div className="px-2 pb-3">
+          <button
+            onClick={() => {
+              clearApiKey();
+              window.location.reload();
+            }}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-ctp-subtext1 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+          >
+            <NavIcon d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            Sign Out
+          </button>
+        </div>
       </nav>
 
       {/* Main content */}
