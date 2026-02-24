@@ -226,6 +226,7 @@ The API server respects these environment variables:
 | `DEVON_API_KEY` | Bearer token for authentication (`disable` = no auth, empty = use config or trigger setup) |
 | `DEVON_STORAGE_PATH` | Override the model storage directory |
 | `DEVON_CONFIG_PATH` | Override the config file path |
+| `DEVON_FRAME_ANCESTORS` | Space-separated origins allowed to embed Devon in an iframe (e.g., `https://kitt.example.com`). Sends `Content-Security-Policy: frame-ancestors` instead of `X-Frame-Options: DENY`. Invalid origins are silently rejected; falls back to DENY if all are invalid or unset. |
 | `HF_TOKEN` | HuggingFace token for gated model access |
 
 ---

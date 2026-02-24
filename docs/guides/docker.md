@@ -40,6 +40,7 @@ DEVON_DATA_PATH=/mnt/models docker compose up -d  # uses host path
 | `DEVON_PORT` | `8000` | Host port mapped to the container |
 | `DEVON_DATA_PATH` | `devon-data` (named volume) | Host path or named volume for `/data` |
 | `DEVON_API_KEY` | *(empty)* | Bearer token for API auth. Empty disables auth |
+| `DEVON_FRAME_ANCESTORS` | *(empty)* | Origins allowed to embed Devon in an iframe (e.g., `https://kitt.example.com`). Falls back to `X-Frame-Options: DENY` when unset. |
 | `HF_TOKEN` | *(empty)* | HuggingFace token for gated model access |
 
 Set variables in a `.env` file next to `docker-compose.yml` or export them
