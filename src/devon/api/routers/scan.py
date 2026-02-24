@@ -1,12 +1,12 @@
 """Scan endpoint to discover untracked models."""
 
 from pathlib import Path
+from typing import List
 
 from fastapi import APIRouter, Depends
 
-from devon.api.dependencies import get_settings, get_storage, verify_api_key
+from devon.api.dependencies import get_storage, verify_api_key
 from devon.api.schemas import ScanRequest, ScanResponse, ScanResultEntry
-from devon.config.settings import Settings
 from devon.storage.organizer import ModelStorage
 from devon.storage.scanner import ModelScanner
 
@@ -17,7 +17,6 @@ router = APIRouter(prefix="/api/v1", dependencies=[Depends(verify_api_key)])
 async def scan_models(
     body: ScanRequest,
     storage: ModelStorage = Depends(get_storage),
-    settings: Settings = Depends(get_settings),
 ):
     """Scan model directory to discover untracked models.
 
@@ -32,7 +31,7 @@ async def scan_models(
     new_entries = scanner.scan(scan_path, existing_keys)
     stale_keys = scanner.find_stale(storage.index)
 
-    results: list[ScanResultEntry] = []
+    results: List[ScanResultEntry] = []
     added = 0
     removed = 0
 
@@ -43,11 +42,9 @@ async def scan_models(
             size_bytes=entry["size_bytes"],
             status="new",
         ))
+        added += 1
         if not body.dry_run:
             storage.index[f"{entry['source']}::{entry['model_id']}"] = entry
-            added += 1
-        else:
-            added += 1
 
     for key in stale_keys:
         entry = storage.index[key]
