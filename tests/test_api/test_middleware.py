@@ -156,6 +156,21 @@ class TestSecurityHeaders:
         assert "Content-Security-Policy" not in resp.headers
 
     @pytest.mark.anyio
+    async def test_frame_ancestors_rejects_invalid_port(self, tmp_path, monkeypatch):
+        app = _make_app(
+            monkeypatch,
+            tmp_path,
+            DEVON_API_KEY="disable",
+            DEVON_FRAME_ANCESTORS="https://kitt.example.com:99999",
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            resp = await c.get("/health")
+        # Invalid port rejected, falls back to X-Frame-Options: DENY
+        assert resp.headers["X-Frame-Options"] == "DENY"
+        assert "Content-Security-Policy" not in resp.headers
+
+    @pytest.mark.anyio
     async def test_no_hsts_by_default(self, client):
         resp = await client.get("/health")
         assert "Strict-Transport-Security" not in resp.headers
@@ -175,7 +190,7 @@ class TestSecurityHeaders:
 
 class TestCORS:
     @pytest.mark.anyio
-    async def test_default_origins_allowed(self, tmp_path, monkeypatch):
+    async def test_no_cors_when_env_unset(self, tmp_path, monkeypatch):
         monkeypatch.delenv("DEVON_CORS_ORIGINS", raising=False)
         app = _make_app(monkeypatch, tmp_path, DEVON_API_KEY="disable")
         transport = ASGITransport(app=app)
@@ -187,7 +202,7 @@ class TestCORS:
                     "Access-Control-Request-Method": "GET",
                 },
             )
-        assert resp.headers.get("access-control-allow-origin") == "http://localhost:5173"
+        assert "access-control-allow-origin" not in resp.headers
 
     @pytest.mark.anyio
     async def test_custom_origins_from_env(self, tmp_path, monkeypatch):

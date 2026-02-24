@@ -75,15 +75,13 @@ class TestUpdateConfig:
         assert resp.json()["config"]["storage"]["base_path"] == "/new/path"
 
     @pytest.mark.anyio
-    async def test_strips_secrets_from_config_update(self, client):
+    async def test_rejects_secrets_in_config_update(self, client):
         resp = await client.put(
             "/api/v1/config",
-            json={"config": {"secrets": {"hf_token": "should-be-ignored"}}},
+            json={"config": {"secrets": {"hf_token": "should-be-rejected"}}},
         )
-        assert resp.status_code == 200
-
-        resp = await client.get("/api/v1/config")
-        assert resp.json()["config"]["secrets"]["hf_token"] is None
+        assert resp.status_code == 400
+        assert "PUT /api/v1/config/secrets" in resp.json()["detail"]
 
     @pytest.mark.anyio
     async def test_deep_merge_preserves_siblings(self, client):

@@ -35,7 +35,7 @@ class ModelStorage:
         """Ensure path resolves within base_path. Raises ValueError if not."""
         resolved = path.resolve()
         base_resolved = self.base_path.resolve()
-        if not str(resolved).startswith(str(base_resolved) + "/") and resolved != base_resolved:
+        if not resolved.is_relative_to(base_resolved):
             raise ValueError(f"Path traversal detected: {path} resolves outside {self.base_path}")
         return resolved
 
@@ -147,7 +147,11 @@ class ModelStorage:
         """Load index from disk."""
         if self.index_file.exists():
             with open(self.index_file) as f:
-                return json.load(f)
+                data = json.load(f)
+            if not isinstance(data, dict):
+                logger.warning("Manifest is not a JSON object, resetting to empty index")
+                return {}
+            return data
         return {}
 
     def _save_index(self) -> None:

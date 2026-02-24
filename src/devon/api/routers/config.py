@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from devon.api.dependencies import get_settings, verify_api_key
 from devon.api.schemas import (
@@ -27,11 +27,14 @@ async def update_config(
     body: ConfigUpdateRequest,
     settings: Settings = Depends(get_settings),
 ):
-    """Update configuration. Secrets in the payload are ignored — use PUT /config/secrets."""
-    # Strip secret keys from the update to prevent accidental exposure
-    updates = {k: v for k, v in body.config.items() if k != "secrets"}
+    """Update configuration. Secrets in the payload are rejected — use PUT /config/secrets."""
+    if "secrets" in body.config:
+        raise HTTPException(
+            status_code=400,
+            detail="Secrets cannot be set via this endpoint. Use PUT /api/v1/config/secrets instead.",
+        )
 
-    settings.update(updates)
+    settings.update(body.config)
     return ConfigResponse(config=settings.to_safe_dict())
 
 
