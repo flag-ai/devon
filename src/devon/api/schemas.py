@@ -189,6 +189,30 @@ class SetupKeyResponse(BaseModel):
     api_key: str
 
 
+# --- Scan ---
+
+
+class ScanRequest(BaseModel):
+    reconcile: bool = False
+    dry_run: bool = False
+    path: Optional[str] = None
+
+
+class ScanResultEntry(BaseModel):
+    model_id: str
+    source: str
+    size_bytes: int
+    status: str  # "new", "existing", "stale", "removed"
+
+
+class ScanResponse(BaseModel):
+    added: int
+    existing: int
+    stale: int
+    removed: int
+    models: List[ScanResultEntry]
+
+
 # --- Errors ---
 
 

@@ -66,6 +66,29 @@ kitt run --model-list models.txt --engine vllm --suite standard
 This pattern scales to any number of models. Download as many as you
 need, export once, and KITT tests them all.
 
+### Working with Custom Models
+
+If you have models from sources other than HuggingFace (custom fine-tunes,
+converted weights, etc.), place them in the models directory and scan:
+
+```bash
+# Add your custom model to the storage directory
+cp -r /path/to/my-custom-model ~/.cache/devon/models/local/my-custom-model
+
+# Register it in the manifest
+devon scan
+
+# Export for KITT — custom models are included automatically
+devon export --format kitt -o models.txt
+```
+
+## Portable Model Directory
+
+The model manifest (`manifest.json`) lives inside the models directory
+itself. This means you can copy or mount the entire directory on another
+machine and KITT can consume it directly — no separate index file to
+track.
+
 ## Remote Integration via REST API
 
 When DEVON runs as a containerized API server, KITT (or any client) can

@@ -22,8 +22,13 @@ containerized API for remote model management.
     interrupted -- no need to start over.
 
 **Local Vault**
-:   Models are stored in a clean directory hierarchy with a JSON index. Track total
-    disk usage at a glance with `devon status`.
+:   Models are stored in a clean directory hierarchy with a portable manifest. Track
+    total disk usage at a glance with `devon status`.
+
+**Directory Scanning**
+:   Discover models added outside Devon with `devon scan`. The scanner infers metadata
+    from file extensions, config files, and naming conventions — great for custom
+    fine-tunes and manual copies.
 
 **KITT Integration**
 :   Export downloaded model paths in a format KITT can consume directly, bridging model
@@ -65,6 +70,7 @@ containerized API for remote model management.
 devon search --provider qwen --params 30b --size "<100gb"
 devon download Qwen/Qwen2.5-32B-Instruct
 devon list
+devon scan                                            # discover external models
 devon export --format kitt -o models.txt
 
 # Or run as an API server

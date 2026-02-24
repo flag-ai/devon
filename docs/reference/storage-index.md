@@ -1,26 +1,30 @@
-# Storage Index
+# Model Manifest
 
-DEVON tracks all locally downloaded models in a JSON index file. This page
-documents the index location, format, and the methods available for
-interacting with it.
+DEVON tracks all locally downloaded models in a JSON manifest file. This
+page documents the manifest location, format, and the methods available
+for interacting with it.
 
 ## File Location
 
 ```
-~/.cache/devon/index.json
+~/.cache/devon/models/manifest.json
 ```
 
-The index file sits as a sibling to the `models/` directory inside the
-configured `storage.base_path` parent:
+The manifest lives inside the models directory itself, making the
+directory self-contained and portable:
 
 ```
-~/.cache/devon/
-├── index.json       # Model index
-└── models/          # Downloaded model files
-    └── huggingface/
-        └── Qwen/
-            └── Qwen2.5-32B-Instruct/
+~/.cache/devon/models/
+├── manifest.json    # Model manifest
+└── huggingface/
+    └── Qwen/
+        └── Qwen2.5-32B-Instruct/
 ```
+
+!!! note "Migration from index.json"
+    Prior to v1.2.0, the file was stored at `~/.cache/devon/index.json`
+    (outside the models directory). DEVON automatically migrates the
+    legacy location on first load.
 
 ## Key Format
 

@@ -1,6 +1,6 @@
 # CLI Reference
 
-DEVON exposes nine commands through the `devon` entry point:
+DEVON exposes ten commands through the `devon` entry point:
 
 | Command | Purpose |
 |---------|---------|
@@ -9,6 +9,7 @@ DEVON exposes nine commands through the `devon` entry point:
 | `devon list` | List locally downloaded models |
 | `devon info` | Show detailed metadata for a model |
 | `devon status` | Display vault disk usage and statistics |
+| `devon scan` | Discover and register untracked models |
 | `devon clean` | Remove unused or all cached models |
 | `devon export` | Export model paths for KITT or JSON |
 | `devon remove` | Delete a specific model from the vault |

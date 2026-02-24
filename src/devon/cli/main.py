@@ -48,6 +48,7 @@ cli._lazy_commands = {
     "export": ("devon.cli.export_cmd", "export"),
     "status": ("devon.cli.status_cmd", "status"),
     "remove": ("devon.cli.remove_cmd", "remove"),
+    "scan": ("devon.cli.scan_cmd", "scan"),
     "serve": ("devon.cli.serve_cmd", "serve"),
 }
 

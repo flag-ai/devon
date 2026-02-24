@@ -16,24 +16,25 @@ models/{source}/{author}/{model}/
 For example:
 
 ```
-~/.cache/devon/
-├── index.json
-└── models/
-    └── huggingface/
-        ├── Qwen/
-        │   └── Qwen2.5-32B-Instruct/
-        └── meta-llama/
-            └── Llama-3-70B-Instruct/
+~/.cache/devon/models/
+├── manifest.json
+└── huggingface/
+    ├── Qwen/
+    │   └── Qwen2.5-32B-Instruct/
+    └── meta-llama/
+        └── Llama-3-70B-Instruct/
 ```
 
 This layout mirrors the `author/model` convention used by HuggingFace and
-keeps models from different sources cleanly separated.
+keeps models from different sources cleanly separated. The `manifest.json`
+file lives inside the models directory, making the entire directory
+self-contained and portable.
 
-## JSON Index
+## Manifest
 
-The index file lives at `{base_path}/../index.json` -- a sibling of the
-`models/` directory. It is a single JSON object where each key is a model
-identifier in the format:
+The manifest file lives at `{base_path}/manifest.json` -- inside the
+models directory itself. It is a single JSON object where each key is a
+model identifier in the format:
 
 ```
 {source}::{model_id}
@@ -41,8 +42,15 @@ identifier in the format:
 
 For example: `huggingface::Qwen/Qwen2.5-32B-Instruct`.
 
-See the [Storage Index reference](../reference/storage-index.md) for the
+See the [Manifest reference](../reference/storage-index.md) for the
 full entry schema.
+
+### Migration from index.json
+
+Prior to v1.2.0, the index file was stored at `{base_path}/../index.json`
+(a sibling of the models directory). On first load, DEVON automatically
+migrates the legacy `index.json` to `manifest.json` inside the models
+directory and deletes the old file. No manual action is required.
 
 ## Why a Flat JSON File
 
@@ -50,8 +58,8 @@ full entry schema.
   The index is a single portable file.
 - **Transparency.** Users can inspect and even hand-edit the index with any
   text editor or JSON tool.
-- **Portability.** Copying the `~/.cache/devon/` directory to another
-  machine is enough to move the entire vault.
+- **Portability.** Copying the models directory to another machine is
+  enough to move the entire vault -- the manifest travels with the models.
 
 The trade-off is that concurrent writes from multiple processes are not
 safe without coordination. For CLI use this is not a practical concern.
@@ -85,3 +93,26 @@ time the model is accessed (for example, by `devon info` or
 timestamp to identify models that have not been touched in `N` days,
 making it easy to reclaim disk space without manually deciding which models
 to keep.
+
+## Directory Scanning
+
+The `devon scan` command walks the model directory tree and registers
+any models not already in the manifest. This is useful when:
+
+- Models are copied into the directory manually
+- Custom fine-tuned models are added outside the Devon workflow
+- The manifest is lost or needs to be rebuilt from scratch
+
+The scanner infers metadata from what it finds on disk:
+
+- **Format** from file extensions (`.safetensors`, `.gguf`, `.bin`)
+- **Architecture** from `config.json` (`model_type` field)
+- **Quantization** from filenames (e.g., `Q4_K_M`, `fp16`)
+- **Parameter count** from directory names (e.g., `7B`) or `config.json`
+- **Size** from actual file sizes on disk
+
+Models under a recognized source directory (e.g., `huggingface/`) are
+assigned that source. All others are registered with source `local`.
+
+The `--reconcile` flag also removes manifest entries whose model
+directories no longer exist on disk.

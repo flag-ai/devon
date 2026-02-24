@@ -75,24 +75,58 @@ Remove all cached models:
 devon clean --all
 ```
 
+## Scanning for External Models
+
+If you add models to the storage directory outside of Devon (custom
+fine-tunes, manual copies, etc.), use `scan` to discover and register them:
+
+```bash
+devon scan
+```
+
+The scanner walks the directory tree, detects model weight files, and
+infers metadata (format, architecture, quantization, parameter count)
+from file extensions, filenames, and `config.json` if present.
+
+Scan a different directory:
+
+```bash
+devon scan /data/custom-models
+```
+
+Preview what would be added without modifying the manifest:
+
+```bash
+devon scan --dry-run
+```
+
+Remove stale entries (models deleted outside Devon):
+
+```bash
+devon scan --reconcile
+```
+
 ## Storage Directory Structure
 
 DEVON organizes downloaded files under the configured base path:
 
 ```
-~/.cache/devon/
-├── models/
-│   └── huggingface/
-│       ├── Qwen/Qwen2.5-32B-Instruct/
-│       └── meta-llama/Llama-3.3-70B-Instruct/
-└── index.json
+~/.cache/devon/models/
+├── manifest.json
+├── huggingface/
+│   ├── Qwen/Qwen2.5-32B-Instruct/
+│   └── meta-llama/Llama-3.3-70B-Instruct/
+└── local/
+    └── my-custom-model/
 ```
 
-- **models/** contains one directory per source, with subdirectories for
-  each `author/model-name` pair.
-- **index.json** tracks metadata for every downloaded model including
-  source, model ID, download date, and file sizes. DEVON uses this index
-  for fast lookups without scanning the filesystem.
+- **huggingface/** (and other source directories) contain subdirectories
+  for each `author/model-name` pair.
+- **local/** contains models discovered by `devon scan` that were not
+  downloaded through a known source.
+- **manifest.json** tracks metadata for every model including source,
+  model ID, download date, and file sizes. DEVON uses this manifest for
+  fast lookups without scanning the filesystem.
 
 You can change the storage base path in your
 [configuration file](configuration.md).

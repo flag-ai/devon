@@ -314,3 +314,32 @@ export const exportModels = (format: string = "kitt") =>
     method: "POST",
     body: JSON.stringify({ format }),
   });
+
+// --- Scan ---
+
+export interface ScanRequest {
+  reconcile?: boolean;
+  dry_run?: boolean;
+  path?: string;
+}
+
+export interface ScanResultEntry {
+  model_id: string;
+  source: string;
+  size_bytes: number;
+  status: "new" | "existing" | "stale" | "removed";
+}
+
+export interface ScanResponse {
+  added: number;
+  existing: number;
+  stale: number;
+  removed: number;
+  models: ScanResultEntry[];
+}
+
+export const scanModels = (req: ScanRequest = {}) =>
+  request<ScanResponse>("/api/v1/scan", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });

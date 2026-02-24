@@ -25,16 +25,17 @@ class ModelStorage:
             base_path = settings.storage_path
 
         self.base_path = Path(base_path)
-        self.index_file = self.base_path.parent / "index.json"
+        self.index_file = self.base_path / "manifest.json"
 
         self.base_path.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self._migrate_index()
         self.index = self._load_index()
 
     def _validate_path(self, path: Path) -> Path:
         """Ensure path resolves within base_path. Raises ValueError if not."""
         resolved = path.resolve()
         base_resolved = self.base_path.resolve()
-        if not str(resolved).startswith(str(base_resolved) + "/") and resolved != base_resolved:
+        if not resolved.is_relative_to(base_resolved):
             raise ValueError(f"Path traversal detected: {path} resolves outside {self.base_path}")
         return resolved
 
@@ -129,11 +130,28 @@ class ModelStorage:
             self.index[key]["last_used"] = datetime.now().isoformat()
             self._save_index()
 
+    def _migrate_index(self) -> None:
+        """Migrate legacy index.json to manifest.json if needed."""
+        legacy_index = self.base_path.parent / "index.json"
+        if legacy_index.exists() and not self.index_file.exists():
+            logger.info("Migrating index.json → manifest.json")
+            data = json.loads(legacy_index.read_text())
+            self.index_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.index_file, "w") as f:
+                json.dump(data, f, indent=2)
+            self.index_file.chmod(0o600)
+            legacy_index.unlink()
+            logger.info("Migration complete — deleted legacy index.json")
+
     def _load_index(self) -> Dict:
         """Load index from disk."""
         if self.index_file.exists():
             with open(self.index_file) as f:
-                return json.load(f)
+                data = json.load(f)
+            if not isinstance(data, dict):
+                logger.warning("Manifest is not a JSON object, resetting to empty index")
+                return {}
+            return data
         return {}
 
     def _save_index(self) -> None:

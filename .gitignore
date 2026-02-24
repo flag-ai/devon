@@ -44,5 +44,10 @@ site/
 # Frontend build output
 src/devon/ui/static/
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
 # Project specific
 *.log

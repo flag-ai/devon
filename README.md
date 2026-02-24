@@ -10,7 +10,8 @@ CLI tool, REST API, and Web UI for discovering, downloading, and managing LLM mo
 
 - **Smart search** — filter by provider, size, parameters, format, task, license
 - **Easy download** — by URL or model ID with automatic resume
-- **Local vault** — organized storage with disk usage tracking
+- **Local vault** — organized storage with portable manifest and disk usage tracking
+- **Directory scanning** — discover models added outside Devon (custom fine-tunes, manual copies) with automatic metadata inference
 - **KITT integration** — export model paths for inference testing
 - **Source plugins** — extensible architecture for model sources
 - **YAML configuration** — deep-merged config with sensible defaults
@@ -34,6 +35,9 @@ devon download https://huggingface.co/Qwen/Qwen2.5-32B-Instruct
 # List downloaded models
 devon list
 
+# Discover models added outside Devon
+devon scan
+
 # Export for KITT
 devon export --format kitt -o models.txt
 ```
@@ -47,6 +51,7 @@ devon export --format kitt -o models.txt
 | `devon list` | List downloaded models |
 | `devon info` | Show model details |
 | `devon status` | Storage usage summary |
+| `devon scan` | Discover and register untracked models |
 | `devon clean` | Remove old or unused models |
 | `devon remove` | Delete a specific model |
 | `devon export` | Export paths for KITT |
@@ -118,6 +123,7 @@ devon serve --host 0.0.0.0 --port 9000
 | GET | `/api/v1/downloads/{job_id}` | Get download job status |
 | POST | `/api/v1/downloads/{job_id}/restart` | Restart a failed download |
 | GET | `/api/v1/status` | Storage stats |
+| POST | `/api/v1/scan` | Scan for untracked models |
 | POST | `/api/v1/clean` | Clean unused models |
 | POST | `/api/v1/export` | Export model list |
 | GET | `/api/v1/config` | Get configuration (secrets masked) |
@@ -226,7 +232,7 @@ Mount your existing models directory:
 DEVON_DATA_PATH=/mnt/models docker compose up -d
 ```
 
-The container stores models at `/data/models/`, the index at `/data/index.json`, and config at `/data/config.yaml`. A single `-v /your/path:/data` covers everything.
+The container stores models (and the manifest) at `/data/models/` and config at `/data/config.yaml`. A single `-v /your/path:/data` covers everything.
 
 **Note:** The default configuration runs a single uvicorn worker to avoid race conditions on the JSON index file.
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listModels, deleteModel, type LocalModel } from "../api/client";
+import { listModels, deleteModel, scanModels, type LocalModel, type ScanResponse } from "../api/client";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -78,6 +78,8 @@ export default function Models() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<LocalModel | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<LocalModel | null>(null);
+  const [scanReconcile, setScanReconcile] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["models"],
@@ -94,14 +96,78 @@ export default function Models() {
     },
   });
 
+  const scanMut = useMutation({
+    mutationFn: () => scanModels({ reconcile: scanReconcile }),
+    onSuccess: (result) => {
+      setScanResult(result);
+      if (result.added > 0 || result.removed > 0) {
+        queryClient.invalidateQueries({ queryKey: ["models"] });
+        queryClient.invalidateQueries({ queryKey: ["storage-status"] });
+      }
+    },
+  });
+
   const models = data?.models ?? [];
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Local Models</h2>
-        <span className="text-sm text-ctp-subtext0">{models.length} model{models.length !== 1 ? "s" : ""}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-ctp-subtext0">{models.length} model{models.length !== 1 ? "s" : ""}</span>
+          <label className="flex items-center gap-1.5 text-xs text-ctp-subtext0 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={scanReconcile}
+              onChange={(e) => setScanReconcile(e.target.checked)}
+              className="accent-ctp-mauve"
+            />
+            Reconcile
+          </label>
+          <button
+            onClick={() => scanMut.mutate()}
+            disabled={scanMut.isPending}
+            className="rounded-lg bg-ctp-mauve px-3 py-1.5 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/80 disabled:opacity-50 transition-colors"
+          >
+            {scanMut.isPending ? "Scanning..." : "Scan"}
+          </button>
+        </div>
       </div>
+
+      {scanMut.isError && (
+        <div className="rounded-lg border border-ctp-red/30 bg-ctp-red/10 px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-sm text-ctp-red">
+            Scan failed: {scanMut.error instanceof Error ? scanMut.error.message : "Unknown error"}
+          </p>
+          <button
+            onClick={() => scanMut.reset()}
+            className="text-ctp-overlay1 hover:text-ctp-text transition-colors text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {scanResult && (
+        <div className="rounded-lg border border-ctp-surface0 bg-ctp-mantle px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-sm text-ctp-subtext1">
+            Scan complete: <span className="text-ctp-green">{scanResult.added} added</span>
+            {scanResult.stale > 0 && (
+              <>, <span className="text-ctp-yellow">{scanResult.stale} stale</span></>
+            )}
+            {scanResult.removed > 0 && (
+              <>, <span className="text-ctp-red">{scanResult.removed} removed</span></>
+            )}
+            , {scanResult.existing} already tracked
+          </p>
+          <button
+            onClick={() => setScanResult(null)}
+            className="text-ctp-overlay1 hover:text-ctp-text transition-colors text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {isLoading && <p className="text-ctp-subtext0">Loading models...</p>}
 

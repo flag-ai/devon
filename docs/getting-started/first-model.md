@@ -126,6 +126,11 @@ kitt run --model-list models.txt --engine vllm --suite standard
 
 ---
 
+!!! tip "Already have models on disk?"
+    If you have models from other sources (custom fine-tunes, manual downloads),
+    copy them into the storage directory and run `devon scan` to register them.
+    See [Managing Models](../guides/managing.md) for details.
+
 ## Next Steps
 
 - Advanced search filters: [Searching Models](../guides/searching.md)

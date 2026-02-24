@@ -61,17 +61,32 @@ def create_app() -> FastAPI:
     allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins or ["http://localhost:5173", "http://localhost:8000"],
+        allow_origins=allowed_origins,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
         allow_credentials=False,
     )
 
     # -- Security headers middleware --
-    _origin_re = re.compile(r"^https?://[a-zA-Z0-9._:-]+$")
+    _origin_re = re.compile(r"^https?://[a-zA-Z0-9._-]+(:\d{1,5})?$")
     _raw_frame_ancestors = os.environ.get("DEVON_FRAME_ANCESTORS", "").strip()
-    _valid_ancestors = [o for o in _raw_frame_ancestors.split() if _origin_re.match(o)]
-    _rejected = [o for o in _raw_frame_ancestors.split() if o and not _origin_re.match(o)]
+
+    def _is_valid_ancestor(origin: str) -> bool:
+        if not _origin_re.match(origin):
+            return False
+        # Validate port range if present
+        if ":" in origin.split("//", 1)[-1]:
+            port_str = origin.rsplit(":", 1)[-1]
+            try:
+                port = int(port_str)
+                if port < 1 or port > 65535:
+                    return False
+            except ValueError:
+                return False
+        return True
+
+    _valid_ancestors = [o for o in _raw_frame_ancestors.split() if _is_valid_ancestor(o)]
+    _rejected = [o for o in _raw_frame_ancestors.split() if o and not _is_valid_ancestor(o)]
     if _rejected:
         logger.warning("DEVON_FRAME_ANCESTORS: rejected invalid origins: %s", _rejected)
 
@@ -98,6 +113,7 @@ def create_app() -> FastAPI:
     from devon.api.routers.download import router as download_router
     from devon.api.routers.storage import router as storage_router
     from devon.api.routers.config import router as config_router
+    from devon.api.routers.scan import router as scan_router
 
     app.include_router(health_router)
     app.include_router(setup_router)
@@ -106,6 +122,7 @@ def create_app() -> FastAPI:
     app.include_router(download_router)
     app.include_router(storage_router)
     app.include_router(config_router)
+    app.include_router(scan_router)
 
     # -- Serve Web UI static files --
     if STATIC_DIR.is_dir():

@@ -2,6 +2,23 @@
 
 All notable changes to DEVON are documented in this file.
 
+## 1.2.0
+
+- **Model manifest** — model tracking index moved from `index.json` (outside models dir) to `manifest.json` inside the models directory root
+    - Automatic migration from legacy `index.json` on first load
+    - Self-contained: the models directory is now fully portable
+- **`devon scan` command** — discover and register models not tracked by the manifest
+    - Walks the directory tree and identifies model weight files
+    - Infers metadata: format, architecture, quantization, parameter count, size, author
+    - Recognizes models added outside Devon (custom models, manual copies)
+    - `--reconcile` removes stale entries whose files no longer exist on disk
+    - `--dry-run` previews changes without modifying the manifest
+    - Optional `[PATH]` argument to scan a directory other than the default storage path
+- **`POST /api/v1/scan` endpoint** — trigger a scan from the REST API or Web UI
+    - Request fields: `reconcile`, `dry_run`, `path`
+    - Returns added/existing/stale/removed counts and per-model details
+- **Web UI scan** — Scan button with reconcile toggle on the Models page
+
 ## 1.1.0
 
 - **REST API** — FastAPI server exposed via `devon serve`

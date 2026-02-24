@@ -362,6 +362,68 @@ Export model list.
 
 ---
 
+### POST /api/v1/scan
+
+Scan the model directory to discover untracked models and optionally
+remove stale entries.
+
+**Request Body**
+
+```json
+{
+  "reconcile": false,
+  "dry_run": false,
+  "path": null
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `reconcile` | bool | `false` | Also remove entries whose files no longer exist on disk |
+| `dry_run` | bool | `false` | Preview changes without modifying the manifest |
+| `path` | string | `null` | Directory to scan (defaults to configured storage path) |
+
+**Response** `200`
+
+```json
+{
+  "added": 2,
+  "existing": 5,
+  "stale": 1,
+  "removed": 0,
+  "models": [
+    {
+      "model_id": "my-models/custom-llama-7B",
+      "source": "local",
+      "size_bytes": 4123456789,
+      "status": "new"
+    },
+    {
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "source": "huggingface",
+      "size_bytes": 14495514624,
+      "status": "new"
+    },
+    {
+      "model_id": "old/deleted-model",
+      "source": "huggingface",
+      "size_bytes": 8000000000,
+      "status": "stale"
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `added` | int | Number of new models registered |
+| `existing` | int | Number of models already tracked |
+| `stale` | int | Number of entries with missing files |
+| `removed` | int | Number of stale entries removed (only when `reconcile` is true) |
+| `models` | list | Per-model results with `status`: `new`, `stale`, or `removed` |
+
+---
+
 ## Error Responses
 
 All error responses follow this format:

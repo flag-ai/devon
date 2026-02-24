@@ -96,3 +96,73 @@ class TestModelStorage:
         # Reload and verify
         storage2 = ModelStorage(base_path=base)
         assert storage2.is_downloaded("huggingface", "test/persist")
+
+    def test_manifest_location(self, tmp_path):
+        """Manifest lives inside the models directory."""
+        base = tmp_path / "models"
+        storage = ModelStorage(base_path=base)
+        assert storage.index_file == base / "manifest.json"
+
+    def test_migrate_legacy_index(self, tmp_path):
+        """Legacy index.json is migrated to manifest.json on init."""
+        import json
+
+        base = tmp_path / "models"
+        base.mkdir(parents=True)
+
+        # Write a legacy index.json at the old location
+        legacy_path = tmp_path / "index.json"
+        legacy_data = {
+            "huggingface::test/model": {
+                "source": "huggingface",
+                "model_id": "test/model",
+                "path": str(base / "huggingface" / "test" / "model"),
+                "metadata": {},
+                "files": ["model.bin"],
+                "downloaded_at": "2025-01-01T00:00:00",
+                "last_used": None,
+                "size_bytes": 100,
+            }
+        }
+        legacy_path.write_text(json.dumps(legacy_data))
+
+        # Init should migrate
+        storage = ModelStorage(base_path=base)
+
+        assert not legacy_path.exists()
+        assert (base / "manifest.json").exists()
+        assert storage.is_downloaded("huggingface", "test/model")
+
+    def test_no_migration_when_manifest_exists(self, tmp_path):
+        """Don't overwrite manifest.json if both files exist."""
+        import json
+
+        base = tmp_path / "models"
+        base.mkdir(parents=True)
+
+        # Write legacy index with one model
+        legacy_path = tmp_path / "index.json"
+        legacy_path.write_text(json.dumps({"old::model": {"source": "old"}}))
+
+        # Write manifest with different data
+        manifest_path = base / "manifest.json"
+        manifest_data = {
+            "huggingface::real/model": {
+                "source": "huggingface",
+                "model_id": "real/model",
+                "path": str(base / "huggingface" / "real" / "model"),
+                "metadata": {},
+                "files": [],
+                "downloaded_at": "2025-01-01T00:00:00",
+                "last_used": None,
+                "size_bytes": 0,
+            }
+        }
+        manifest_path.write_text(json.dumps(manifest_data))
+
+        storage = ModelStorage(base_path=base)
+
+        # Manifest data wins, legacy left untouched
+        assert storage.is_downloaded("huggingface", "real/model")
+        assert not storage.is_downloaded("old", "model")
+        assert legacy_path.exists()

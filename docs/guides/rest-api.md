@@ -69,6 +69,7 @@ curl -H "Authorization: Bearer my-secret" http://localhost:8000/api/v1/models
 | GET | `/api/v1/downloads/{job_id}` | Get download job status |
 | POST | `/api/v1/downloads/{job_id}/restart` | Restart a failed download |
 | GET | `/api/v1/status` | Storage stats |
+| POST | `/api/v1/scan` | Scan for untracked models |
 | POST | `/api/v1/clean` | Clean unused models |
 | POST | `/api/v1/export` | Export model list |
 | GET | `/api/v1/config` | Get configuration (secrets masked) |
@@ -205,6 +206,32 @@ Preview without deleting:
 curl -X POST http://localhost:8000/api/v1/clean \
   -H "Content-Type: application/json" \
   -d '{"unused": true, "days": 30, "dry_run": true}'
+```
+
+### Scan for untracked models
+
+Discover models added outside Devon (custom models, manual copies):
+
+```bash
+curl -X POST http://localhost:8000/api/v1/scan \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Also remove stale entries whose files no longer exist:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/scan \
+  -H "Content-Type: application/json" \
+  -d '{"reconcile": true}'
+```
+
+Preview without changes:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/scan \
+  -H "Content-Type: application/json" \
+  -d '{"dry_run": true}'
 ```
 
 ### Export model list
