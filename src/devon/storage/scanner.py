@@ -39,6 +39,9 @@ QUANT_PATTERNS = [
 ]
 
 _PARAM_RE = re.compile(r"(\d+)[bB]\b")
+_QUANT_RE = re.compile(
+    r"(?<![a-zA-Z])(" + "|".join(re.escape(p) for p in QUANT_PATTERNS) + r")(?![a-zA-Z])"
+)
 
 
 class ModelScanner:
@@ -88,7 +91,13 @@ class ModelScanner:
         return stale
 
     def _find_model_dirs(self, base_path: Path) -> List[Path]:
-        """Walk the directory tree and return directories containing model files."""
+        """Walk the directory tree and return directories containing model files.
+
+        Uses a deepest-directory-wins heuristic: if a directory contains model
+        files but also has child directories with model files, only the children
+        are returned. This avoids duplicate results when a model repo contains
+        nested quantization variants.
+        """
         model_dirs: List[Path] = []
         if not base_path.is_dir():
             return model_dirs
@@ -228,11 +237,11 @@ class ModelScanner:
         return None
 
     def _detect_quantization(self, files: List[str], model_id: str) -> Optional[str]:
-        """Detect quantization from filenames or model ID."""
+        """Detect quantization from filenames or model ID using word boundaries."""
         text = " ".join(files) + " " + model_id
-        for pattern in QUANT_PATTERNS:
-            if pattern in text:
-                return pattern
+        match = _QUANT_RE.search(text)
+        if match:
+            return match.group(1)
         return None
 
     def _detect_parameter_count(self, model_dir: Path, model_id: str) -> Optional[int]:

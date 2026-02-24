@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from devon.api.dependencies import get_storage, verify_api_key
 from devon.api.schemas import ScanRequest, ScanResponse, ScanResultEntry
@@ -24,7 +24,16 @@ async def scan_models(
     any not already in the manifest. Use reconcile=true to also remove
     entries whose files no longer exist on disk.
     """
-    scan_path = Path(body.path) if body.path else storage.base_path
+    if body.path:
+        scan_path = Path(body.path).resolve()
+        base_resolved = storage.base_path.resolve()
+        if not scan_path.is_relative_to(base_resolved):
+            raise HTTPException(
+                status_code=400,
+                detail="Scan path must be within the configured storage directory.",
+            )
+    else:
+        scan_path = storage.base_path
     scanner = ModelScanner()
 
     existing_keys = set(storage.index.keys())

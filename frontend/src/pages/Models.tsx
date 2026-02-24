@@ -134,6 +134,20 @@ export default function Models() {
         </div>
       </div>
 
+      {scanMut.isError && (
+        <div className="rounded-lg border border-ctp-red/30 bg-ctp-red/10 px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-sm text-ctp-red">
+            Scan failed: {scanMut.error instanceof Error ? scanMut.error.message : "Unknown error"}
+          </p>
+          <button
+            onClick={() => scanMut.reset()}
+            className="text-ctp-overlay1 hover:text-ctp-text transition-colors text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {scanResult && (
         <div className="rounded-lg border border-ctp-surface0 bg-ctp-mantle px-4 py-3 mb-4 flex items-center justify-between">
           <p className="text-sm text-ctp-subtext1">
