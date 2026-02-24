@@ -2127,6 +2127,10 @@ is lost. Completed downloads remain in the storage index regardless.</p>
 <td>Override the config file path</td>
 </tr>
 <tr>
+<td><code>DEVON_FRAME_ANCESTORS</code></td>
+<td>Space-separated origins allowed to embed Devon in an iframe (e.g., <code>https://kitt.example.com</code>). Sends <code>Content-Security-Policy: frame-ancestors</code> instead of <code>X-Frame-Options: DENY</code>. Invalid origins are silently rejected; falls back to DENY if all are invalid or unset.</td>
+</tr>
+<tr>
 <td><code>HF_TOKEN</code></td>
 <td>HuggingFace token for gated model access</td>
 </tr>

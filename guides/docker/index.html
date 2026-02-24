@@ -1674,6 +1674,11 @@ default.</p>
 <td>Bearer token for API auth. Empty disables auth</td>
 </tr>
 <tr>
+<td><code>DEVON_FRAME_ANCESTORS</code></td>
+<td><em>(empty)</em></td>
+<td>Origins allowed to embed Devon in an iframe (e.g., <code>https://kitt.example.com</code>). Falls back to <code>X-Frame-Options: DENY</code> when unset.</td>
+</tr>
+<tr>
 <td><code>HF_TOKEN</code></td>
 <td><em>(empty)</em></td>
 <td>HuggingFace token for gated model access</td>
