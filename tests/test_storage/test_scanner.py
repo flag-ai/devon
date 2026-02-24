@@ -19,10 +19,14 @@ def model_tree(tmp_path):
     hf_model = base / "huggingface" / "Qwen" / "Qwen2.5-7B-Instruct"
     hf_model.mkdir(parents=True)
     (hf_model / "model.safetensors").write_bytes(b"x" * 2000)
-    (hf_model / "config.json").write_text(json.dumps({
-        "model_type": "qwen2",
-        "hidden_size": 3584,
-    }))
+    (hf_model / "config.json").write_text(
+        json.dumps(
+            {
+                "model_type": "qwen2",
+                "hidden_size": 3584,
+            }
+        )
+    )
 
     # GGUF model (local/custom)
     gguf_model = base / "my-models" / "llama-7B-Q4_K_M"

@@ -36,12 +36,14 @@ async def scan_models(
     removed = 0
 
     for entry in new_entries:
-        results.append(ScanResultEntry(
-            model_id=entry["model_id"],
-            source=entry["source"],
-            size_bytes=entry["size_bytes"],
-            status="new",
-        ))
+        results.append(
+            ScanResultEntry(
+                model_id=entry["model_id"],
+                source=entry["source"],
+                size_bytes=entry["size_bytes"],
+                status="new",
+            )
+        )
         added += 1
         if not body.dry_run:
             storage.index[f"{entry['source']}::{entry['model_id']}"] = entry
@@ -53,12 +55,14 @@ async def scan_models(
             removed += 1
         else:
             status = "stale"
-        results.append(ScanResultEntry(
-            model_id=entry["model_id"],
-            source=entry["source"],
-            size_bytes=entry["size_bytes"],
-            status=status,
-        ))
+        results.append(
+            ScanResultEntry(
+                model_id=entry["model_id"],
+                source=entry["source"],
+                size_bytes=entry["size_bytes"],
+                status=status,
+            )
+        )
 
     if body.reconcile and not body.dry_run:
         for key in stale_keys:

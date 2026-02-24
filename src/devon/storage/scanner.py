@@ -21,8 +21,22 @@ KNOWN_SOURCES: Set[str] = {"huggingface"}
 ARCH_KEYWORDS = ["llama", "qwen", "mistral", "gpt", "bert", "gemma", "phi", "falcon", "mamba"]
 
 # Quantization patterns detected from filenames and directory names
-QUANT_PATTERNS = ["Q4_K_M", "Q5_K_M", "Q5_K_S", "Q8_0", "Q6_K", "Q4_K_S",
-                  "Q3_K_M", "Q3_K_S", "Q2_K", "IQ4_XS", "fp16", "bf16", "int8", "int4"]
+QUANT_PATTERNS = [
+    "Q4_K_M",
+    "Q5_K_M",
+    "Q5_K_S",
+    "Q8_0",
+    "Q6_K",
+    "Q4_K_S",
+    "Q3_K_M",
+    "Q3_K_S",
+    "Q2_K",
+    "IQ4_XS",
+    "fp16",
+    "bf16",
+    "int8",
+    "int4",
+]
 
 _PARAM_RE = re.compile(r"(\d+)[bB]\b")
 
@@ -88,7 +102,9 @@ class ModelScanner:
             if self._is_model_dir(dirpath):
                 # Don't include dirs that are parents of other model dirs
                 # (we want the deepest model directory)
-                if not any(self._is_model_dir(child) for child in dirpath.iterdir() if child.is_dir()):
+                if not any(
+                    self._is_model_dir(child) for child in dirpath.iterdir() if child.is_dir()
+                ):
                     model_dirs.append(dirpath)
 
         return model_dirs

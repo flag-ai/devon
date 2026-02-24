@@ -17,7 +17,9 @@ console = Console()
 @click.command()
 @click.argument("path", required=False, type=click.Path(exists=True))
 @click.option("--reconcile", is_flag=True, help="Remove stale entries whose files no longer exist")
-@click.option("--dry-run", is_flag=True, help="Show what would change without modifying the manifest")
+@click.option(
+    "--dry-run", is_flag=True, help="Show what would change without modifying the manifest"
+)
 def scan(path, reconcile, dry_run):
     """Scan model directory to discover untracked models.
 
