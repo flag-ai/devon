@@ -64,11 +64,25 @@ def create_app() -> FastAPI:
     )
 
     # -- Security headers middleware --
+    import re
+
+    _origin_re = re.compile(r"^https?://[a-zA-Z0-9._:-]+$")
+    _raw_frame_ancestors = os.environ.get("DEVON_FRAME_ANCESTORS", "").strip()
+    _valid_ancestors = [
+        o for o in _raw_frame_ancestors.split() if _origin_re.match(o)
+    ]
+
     @app.middleware("http")
     async def add_security_headers(request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        if _valid_ancestors:
+            origins = " ".join(_valid_ancestors)
+            response.headers["Content-Security-Policy"] = (
+                f"frame-ancestors 'self' {origins}"
+            )
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if os.environ.get("DEVON_ENABLE_HSTS"):

@@ -108,6 +108,53 @@ class TestSecurityHeaders:
         assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
 
     @pytest.mark.anyio
+    async def test_frame_ancestors_replaces_xfo(self, tmp_path, monkeypatch):
+        app = _make_app(
+            monkeypatch,
+            tmp_path,
+            DEVON_API_KEY="disable",
+            DEVON_FRAME_ANCESTORS="https://kitt.example.com",
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            resp = await c.get("/health")
+        assert "X-Frame-Options" not in resp.headers
+        assert (
+            resp.headers["Content-Security-Policy"]
+            == "frame-ancestors 'self' https://kitt.example.com"
+        )
+
+    @pytest.mark.anyio
+    async def test_frame_ancestors_rejects_csp_injection(self, tmp_path, monkeypatch):
+        app = _make_app(
+            monkeypatch,
+            tmp_path,
+            DEVON_API_KEY="disable",
+            DEVON_FRAME_ANCESTORS="https://ok.com; script-src 'unsafe-inline'",
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            resp = await c.get("/health")
+        # All tokens contain invalid chars (semicolons, quotes); falls back to DENY
+        assert resp.headers["X-Frame-Options"] == "DENY"
+        assert "Content-Security-Policy" not in resp.headers
+
+    @pytest.mark.anyio
+    async def test_frame_ancestors_rejects_wildcard(self, tmp_path, monkeypatch):
+        app = _make_app(
+            monkeypatch,
+            tmp_path,
+            DEVON_API_KEY="disable",
+            DEVON_FRAME_ANCESTORS="*",
+        )
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            resp = await c.get("/health")
+        # Wildcard rejected, falls back to X-Frame-Options: DENY
+        assert resp.headers["X-Frame-Options"] == "DENY"
+        assert "Content-Security-Policy" not in resp.headers
+
+    @pytest.mark.anyio
     async def test_no_hsts_by_default(self, client):
         resp = await client.get("/health")
         assert "Strict-Transport-Security" not in resp.headers
