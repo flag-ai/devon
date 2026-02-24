@@ -1495,8 +1495,12 @@ Results are sorted by popularity and displayed in rich terminal tables.</dd>
 <dd>Pass a HuggingFace URL or a model ID. Downloads resume automatically if
 interrupted -- no need to start over.</dd>
 <dt><strong>Local Vault</strong></dt>
-<dd>Models are stored in a clean directory hierarchy with a JSON index. Track total
-disk usage at a glance with <code>devon status</code>.</dd>
+<dd>Models are stored in a clean directory hierarchy with a portable manifest. Track
+total disk usage at a glance with <code>devon status</code>.</dd>
+<dt><strong>Directory Scanning</strong></dt>
+<dd>Discover models added outside Devon with <code>devon scan</code>. The scanner infers metadata
+from file extensions, config files, and naming conventions — great for custom
+fine-tunes and manual copies.</dd>
 <dt><strong>KITT Integration</strong></dt>
 <dd>Export downloaded model paths in a format KITT can consume directly, bridging model
 management and inference testing.</dd>
@@ -1550,10 +1554,11 @@ all live under <code>/data</code> for easy host-path binding.</dd>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>devon search --provider qwen --params 30b --size &quot;&lt;100gb&quot;
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>devon download Qwen/Qwen2.5-32B-Instruct
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>devon list
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>devon export --format kitt -o models.txt
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a># Or run as an API server
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>devon serve --host 0.0.0.0 --port 8000
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>devon scan                                            # discover external models
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>devon export --format kitt -o models.txt
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a># Or run as an API server
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>devon serve --host 0.0.0.0 --port 8000
 </code></pre></div>
 <hr />
 <h2 id="related-projects">Related Projects<a class="headerlink" href="#related-projects" title="Permanent link">&para;</a></h2>

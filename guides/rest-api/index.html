@@ -969,6 +969,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scan-for-untracked-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scan for untracked models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#export-model-list" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1778,6 +1789,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scan-for-untracked-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scan for untracked models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#export-model-list" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1957,6 +1979,11 @@ in order):</p>
 </tr>
 <tr>
 <td>POST</td>
+<td><code>/api/v1/scan</code></td>
+<td>Scan for untracked models</td>
+</tr>
+<tr>
+<td>POST</td>
 <td><code>/api/v1/clean</code></td>
 <td>Clean unused models</td>
 </tr>
@@ -2098,10 +2125,26 @@ is lost. Completed downloads remain in the storage index regardless.</p>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;unused&quot;: true, &quot;days&quot;: 30, &quot;dry_run&quot;: true}&#39;</span>
 </code></pre></div>
-<h3 id="export-model-list">Export model list<a class="headerlink" href="#export-model-list" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/api/v1/export<span class="w"> </span><span class="se">\</span>
+<h3 id="scan-for-untracked-models">Scan for untracked models<a class="headerlink" href="#scan-for-untracked-models" title="Permanent link">&para;</a></h3>
+<p>Discover models added outside Devon (custom models, manual copies):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/api/v1/scan<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;format&quot;: &quot;kitt&quot;}&#39;</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{}&#39;</span>
+</code></pre></div>
+<p>Also remove stale entries whose files no longer exist:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/api/v1/scan<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;reconcile&quot;: true}&#39;</span>
+</code></pre></div>
+<p>Preview without changes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/api/v1/scan<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;dry_run&quot;: true}&#39;</span>
+</code></pre></div>
+<h3 id="export-model-list">Export model list<a class="headerlink" href="#export-model-list" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/api/v1/export<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;format&quot;: &quot;kitt&quot;}&#39;</span>
 </code></pre></div>
 <hr />
 <h2 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>

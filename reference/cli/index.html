@@ -1411,6 +1411,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#search" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1469,7 +1480,7 @@
 
 
 <h1 id="cli-reference">CLI Reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h1>
-<p>DEVON exposes nine commands through the <code>devon</code> entry point:</p>
+<p>DEVON exposes ten commands through the <code>devon</code> entry point:</p>
 <table>
 <thead>
 <tr>
@@ -1497,6 +1508,10 @@
 <tr>
 <td><code>devon status</code></td>
 <td>Display vault disk usage and statistics</td>
+</tr>
+<tr>
+<td><code>devon scan</code></td>
+<td>Discover and register untracked models</td>
 </tr>
 <tr>
 <td><code>devon clean</code></td>
@@ -1800,13 +1815,57 @@
 </tr>
 </tbody>
 </table>
+<h4 id="scan">scan<a class="headerlink" href="#scan" title="Permanent link">&para;</a></h4>
+<p>Scan model directory to discover untracked models.</p>
+<p>Walks the model directory tree, identifies model files, and registers
+any models not already in the manifest. Useful for discovering models
+added outside Devon (custom models, manual copies).</p>
+<p>Examples:
+  devon scan
+  devon scan /data/models
+  devon scan --reconcile
+  devon scan --dry-run</p>
+<p><strong>Usage:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>devon scan [OPTIONS] [PATH]
+</code></pre></div>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--reconcile</code></td>
+<td>boolean</td>
+<td>Remove stale entries whose files no longer exist</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>boolean</td>
+<td>Show what would change without modifying the manifest</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 <h4 id="search">search<a class="headerlink" href="#search" title="Permanent link">&para;</a></h4>
 <p>Search for models matching criteria.</p>
 <p>Examples:
   devon search --provider qwen --params 30b --size "&lt;100gb"
   devon search "llama 3" --format gguf</p>
 <p><strong>Usage:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>devon search [OPTIONS] [QUERY]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>devon search [OPTIONS] [QUERY]
 </code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -1882,7 +1941,7 @@
   devon serve
   devon serve --host 0.0.0.0 --port 9000</p>
 <p><strong>Usage:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>devon serve [OPTIONS]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>devon serve [OPTIONS]
 </code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -1924,7 +1983,7 @@
 <h4 id="status">status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h4>
 <p>Show storage status and statistics.</p>
 <p><strong>Usage:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>devon status [OPTIONS]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>devon status [OPTIONS]
 </code></pre></div>
 <p><strong>Options:</strong></p>
 <table>

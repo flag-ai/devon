@@ -819,6 +819,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scanning-for-external-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scanning for External Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#storage-directory-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1496,6 +1507,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scanning-for-external-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scanning for External Models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#storage-directory-structure" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1567,21 +1589,41 @@ live metadata and merges it with local storage information:</p>
 <p>Remove all cached models:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>devon<span class="w"> </span>clean<span class="w"> </span>--all
 </code></pre></div>
+<h2 id="scanning-for-external-models">Scanning for External Models<a class="headerlink" href="#scanning-for-external-models" title="Permanent link">&para;</a></h2>
+<p>If you add models to the storage directory outside of Devon (custom
+fine-tunes, manual copies, etc.), use <code>scan</code> to discover and register them:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>devon<span class="w"> </span>scan
+</code></pre></div>
+<p>The scanner walks the directory tree, detects model weight files, and
+infers metadata (format, architecture, quantization, parameter count)
+from file extensions, filenames, and <code>config.json</code> if present.</p>
+<p>Scan a different directory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>devon<span class="w"> </span>scan<span class="w"> </span>/data/custom-models
+</code></pre></div>
+<p>Preview what would be added without modifying the manifest:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>devon<span class="w"> </span>scan<span class="w"> </span>--dry-run
+</code></pre></div>
+<p>Remove stale entries (models deleted outside Devon):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>devon<span class="w"> </span>scan<span class="w"> </span>--reconcile
+</code></pre></div>
 <h2 id="storage-directory-structure">Storage Directory Structure<a class="headerlink" href="#storage-directory-structure" title="Permanent link">&para;</a></h2>
 <p>DEVON organizes downloaded files under the configured base path:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>~/.cache/devon/
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>├── models/
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>│   └── huggingface/
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>│       ├── Qwen/Qwen2.5-32B-Instruct/
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>│       └── meta-llama/Llama-3.3-70B-Instruct/
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>└── index.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>~/.cache/devon/models/
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>├── manifest.json
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>├── huggingface/
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>│   ├── Qwen/Qwen2.5-32B-Instruct/
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>│   └── meta-llama/Llama-3.3-70B-Instruct/
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>└── local/
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    └── my-custom-model/
 </code></pre></div>
 <ul>
-<li><strong>models/</strong> contains one directory per source, with subdirectories for
-  each <code>author/model-name</code> pair.</li>
-<li><strong>index.json</strong> tracks metadata for every downloaded model including
-  source, model ID, download date, and file sizes. DEVON uses this index
-  for fast lookups without scanning the filesystem.</li>
+<li><strong>huggingface/</strong> (and other source directories) contain subdirectories
+  for each <code>author/model-name</code> pair.</li>
+<li><strong>local/</strong> contains models discovered by <code>devon scan</code> that were not
+  downloaded through a known source.</li>
+<li><strong>manifest.json</strong> tracks metadata for every model including source,
+  model ID, download date, and file sizes. DEVON uses this manifest for
+  fast lookups without scanning the filesystem.</li>
 </ul>
 <p>You can change the storage base path in your
 <a href="../configuration/">configuration file</a>.</p>

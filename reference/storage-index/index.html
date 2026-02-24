@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#storage-index" class="md-skip">
+        <a href="#model-manifest" class="md-skip">
           Skip to content
         </a>
       
@@ -1485,22 +1485,27 @@
   
 
 
-<h1 id="storage-index">Storage Index<a class="headerlink" href="#storage-index" title="Permanent link">&para;</a></h1>
-<p>DEVON tracks all locally downloaded models in a JSON index file. This page
-documents the index location, format, and the methods available for
-interacting with it.</p>
+<h1 id="model-manifest">Model Manifest<a class="headerlink" href="#model-manifest" title="Permanent link">&para;</a></h1>
+<p>DEVON tracks all locally downloaded models in a JSON manifest file. This
+page documents the manifest location, format, and the methods available
+for interacting with it.</p>
 <h2 id="file-location">File Location<a class="headerlink" href="#file-location" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>~/.cache/devon/index.json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>~/.cache/devon/models/manifest.json
 </code></pre></div>
-<p>The index file sits as a sibling to the <code>models/</code> directory inside the
-configured <code>storage.base_path</code> parent:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>~/.cache/devon/
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── index.json       # Model index
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>└── models/          # Downloaded model files
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    └── huggingface/
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        └── Qwen/
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            └── Qwen2.5-32B-Instruct/
+<p>The manifest lives inside the models directory itself, making the
+directory self-contained and portable:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>~/.cache/devon/models/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── manifest.json    # Model manifest
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>└── huggingface/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    └── Qwen/
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        └── Qwen2.5-32B-Instruct/
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Migration from index.json</p>
+<p>Prior to v1.2.0, the file was stored at <code>~/.cache/devon/index.json</code>
+(outside the models directory). DEVON automatically migrates the
+legacy location on first load.</p>
+</div>
 <h2 id="key-format">Key Format<a class="headerlink" href="#key-format" title="Permanent link">&para;</a></h2>
 <p>Each entry is keyed by <code>{source}::{model_id}</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>huggingface::Qwen/Qwen2.5-32B-Instruct

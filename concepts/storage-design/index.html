@@ -1317,13 +1317,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#json-index" class="md-nav__link">
+  <a href="#manifest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON Index
+        Manifest
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#migration-from-indexjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration from index.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1365,6 +1382,17 @@
     <span class="md-ellipsis">
       
         Last-Used Tracking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Scanning
       
     </span>
   </a>
@@ -1452,13 +1480,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#json-index" class="md-nav__link">
+  <a href="#manifest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        JSON Index
+        Manifest
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Manifest">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#migration-from-indexjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration from index.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1506,6 +1551,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#directory-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Scanning
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1536,34 +1592,40 @@ decisions behind them.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>models/{source}/{author}/{model}/
 </code></pre></div>
 <p>For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>~/.cache/devon/
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── index.json
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>└── models/
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    └── huggingface/
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        ├── Qwen/
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        │   └── Qwen2.5-32B-Instruct/
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        └── meta-llama/
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            └── Llama-3-70B-Instruct/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>~/.cache/devon/models/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── manifest.json
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>└── huggingface/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    ├── Qwen/
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    │   └── Qwen2.5-32B-Instruct/
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    └── meta-llama/
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        └── Llama-3-70B-Instruct/
 </code></pre></div>
 <p>This layout mirrors the <code>author/model</code> convention used by HuggingFace and
-keeps models from different sources cleanly separated.</p>
-<h2 id="json-index">JSON Index<a class="headerlink" href="#json-index" title="Permanent link">&para;</a></h2>
-<p>The index file lives at <code>{base_path}/../index.json</code> -- a sibling of the
-<code>models/</code> directory. It is a single JSON object where each key is a model
-identifier in the format:</p>
+keeps models from different sources cleanly separated. The <code>manifest.json</code>
+file lives inside the models directory, making the entire directory
+self-contained and portable.</p>
+<h2 id="manifest">Manifest<a class="headerlink" href="#manifest" title="Permanent link">&para;</a></h2>
+<p>The manifest file lives at <code>{base_path}/manifest.json</code> -- inside the
+models directory itself. It is a single JSON object where each key is a
+model identifier in the format:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{source}::{model_id}
 </code></pre></div>
 <p>For example: <code>huggingface::Qwen/Qwen2.5-32B-Instruct</code>.</p>
-<p>See the <a href="../../reference/storage-index/">Storage Index reference</a> for the
+<p>See the <a href="../../reference/storage-index/">Manifest reference</a> for the
 full entry schema.</p>
+<h3 id="migration-from-indexjson">Migration from index.json<a class="headerlink" href="#migration-from-indexjson" title="Permanent link">&para;</a></h3>
+<p>Prior to v1.2.0, the index file was stored at <code>{base_path}/../index.json</code>
+(a sibling of the models directory). On first load, DEVON automatically
+migrates the legacy <code>index.json</code> to <code>manifest.json</code> inside the models
+directory and deletes the old file. No manual action is required.</p>
 <h2 id="why-a-flat-json-file">Why a Flat JSON File<a class="headerlink" href="#why-a-flat-json-file" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Simplicity.</strong> No external database to install, configure, or migrate.
   The index is a single portable file.</li>
 <li><strong>Transparency.</strong> Users can inspect and even hand-edit the index with any
   text editor or JSON tool.</li>
-<li><strong>Portability.</strong> Copying the <code>~/.cache/devon/</code> directory to another
-  machine is enough to move the entire vault.</li>
+<li><strong>Portability.</strong> Copying the models directory to another machine is
+  enough to move the entire vault -- the manifest travels with the models.</li>
 </ul>
 <p>The trade-off is that concurrent writes from multiple processes are not
 safe without coordination. For CLI use this is not a practical concern.
@@ -1591,6 +1653,26 @@ time the model is accessed (for example, by <code>devon info</code> or
 timestamp to identify models that have not been touched in <code>N</code> days,
 making it easy to reclaim disk space without manually deciding which models
 to keep.</p>
+<h2 id="directory-scanning">Directory Scanning<a class="headerlink" href="#directory-scanning" title="Permanent link">&para;</a></h2>
+<p>The <code>devon scan</code> command walks the model directory tree and registers
+any models not already in the manifest. This is useful when:</p>
+<ul>
+<li>Models are copied into the directory manually</li>
+<li>Custom fine-tuned models are added outside the Devon workflow</li>
+<li>The manifest is lost or needs to be rebuilt from scratch</li>
+</ul>
+<p>The scanner infers metadata from what it finds on disk:</p>
+<ul>
+<li><strong>Format</strong> from file extensions (<code>.safetensors</code>, <code>.gguf</code>, <code>.bin</code>)</li>
+<li><strong>Architecture</strong> from <code>config.json</code> (<code>model_type</code> field)</li>
+<li><strong>Quantization</strong> from filenames (e.g., <code>Q4_K_M</code>, <code>fp16</code>)</li>
+<li><strong>Parameter count</strong> from directory names (e.g., <code>7B</code>) or <code>config.json</code></li>
+<li><strong>Size</strong> from actual file sizes on disk</li>
+</ul>
+<p>Models under a recognized source directory (e.g., <code>huggingface/</code>) are
+assigned that source. All others are registered with source <code>local</code>.</p>
+<p>The <code>--reconcile</code> flag also removes manifest entries whose model
+directories no longer exist on disk.</p>
 
 
 
