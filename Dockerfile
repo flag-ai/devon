@@ -1,49 +1,33 @@
-# ---- Frontend builder ----
-FROM node:20-slim AS frontend-builder
-
-WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci --ignore-scripts
-COPY frontend/ ./
+# Stage 1: Build frontend
+FROM node:22-alpine AS web-builder
+WORKDIR /app/web
+COPY web/package*.json ./
+RUN npm ci
+COPY web/ ./
 RUN npm run build
 
-# ---- Python builder ----
-FROM python:3.12-slim AS builder
-
-RUN pip install --no-cache-dir poetry==1.8.* \
-    && poetry config virtualenvs.in-project true
-
+# Stage 2: Build Go binary
+FROM golang:1.25-alpine AS go-builder
+RUN apk add --no-cache gcc musl-dev
 WORKDIR /app
-COPY pyproject.toml poetry.lock* README.md ./
-RUN poetry install --no-interaction --no-ansi --extras api --without dev,docs --no-root
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+COPY --from=web-builder /app/web/dist ./web/dist
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+RUN CGO_ENABLED=0 go build -ldflags "\
+  -X github.com/flag-ai/commons/version.Version=${VERSION} \
+  -X github.com/flag-ai/commons/version.Commit=${COMMIT} \
+  -X github.com/flag-ai/commons/version.Date=${BUILD_DATE}" \
+  -o /devon ./cmd/devon
 
-COPY src/ src/
-COPY --from=frontend-builder /src/devon/ui/static src/devon/ui/static
-RUN poetry install --no-interaction --no-ansi --extras api --without dev,docs
-
-# ---- Runtime ----
-FROM python:3.12-slim
-
-RUN groupadd --gid 1000 devon \
-    && useradd --uid 1000 --gid devon --create-home devon
-
-WORKDIR /app
-COPY --from=builder /app/.venv .venv
-COPY --from=builder /app/src src
-COPY pyproject.toml ./
-
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    DEVON_STORAGE_PATH=/data/models \
-    DEVON_CONFIG_PATH=/data/config.yaml
-
-RUN mkdir -p /data/models && chown -R devon:devon /data
-
-USER devon
-
-EXPOSE 8000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
-
-ENTRYPOINT ["devon", "serve", "--host", "0.0.0.0", "--port", "8000"]
+# Stage 3: Final image
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=go-builder /devon /usr/local/bin/devon
+COPY --from=go-builder /app/migrations /migrations
+EXPOSE 8080
+ENTRYPOINT ["devon"]
+CMD ["serve"]

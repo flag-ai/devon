@@ -2,85 +2,68 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-        include:
-          - os: macos-latest
-            python-version: "3.12"
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-py${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-py${{ matrix.python-version }}-poetry-
-
-      - name: Install dependencies
-        run: poetry install --with dev --extras api
-
-      - name: Run tests
-        run: poetry run pytest tests/ -v --cov=devon --cov-report=xml
-
-      - name: Upload coverage
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v4
-        with:
-          file: coverage.xml
-          fail_ci_if_error: false
-
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: "22"
+      - name: Seed web/dist for go:embed
+        run: mkdir -p web/dist && touch web/dist/.gitkeep
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.11.2
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed web/dist for go:embed
+        run: mkdir -p web/dist && touch web/dist/.gitkeep
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Check coverage
+        run: go tool cover -func=coverage.out
 
-      - name: Install dependencies
-        run: poetry install --with dev --extras api
+  sqlc:
+    name: sqlc Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sqlc-dev/setup-sqlc@v4
+        with:
+          sqlc-version: '1.30.0'
+      - name: Verify generated code is current
+        run: sqlc diff
 
-      - name: Check imports
-        run: poetry run python -c "import devon; print(f'DEVON v{devon.__version__}')"
-
-      - name: Verify CLI
-        run: poetry run devon --version
-
-      - name: Ruff lint
-        run: poetry run ruff check src/ tests/
-
-      - name: Black format check
-        run: poetry run black --check src/ tests/
-
-      - name: Mypy type check
-        run: poetry run mypy src/devon/ --ignore-missing-imports
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed web/dist for go:embed
+        run: mkdir -p web/dist && touch web/dist/.gitkeep
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      - name: Run gosec
+        run: gosec ./...
