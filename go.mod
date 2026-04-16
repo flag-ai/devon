@@ -9,6 +9,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 )
 
+require github.com/google/uuid v1.6.0
+
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/golang-migrate/migrate/v4 v4.19.1 // indirect

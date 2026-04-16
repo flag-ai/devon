@@ -10,6 +10,7 @@ import (
 	"github.com/flag-ai/commons/health"
 	"github.com/flag-ai/devon/internal/api/handlers"
 	"github.com/flag-ai/devon/internal/api/middleware"
+	"github.com/flag-ai/devon/internal/sources"
 )
 
 // RouterConfig holds all dependencies needed to build the HTTP router.
@@ -19,15 +20,17 @@ type RouterConfig struct {
 	// AdminToken returns the currently-valid Bearer token. Callers pass a
 	// getter (rather than a string) so /setup can update the live value
 	// atomically without rebuilding the router.
-	AdminToken     middleware.TokenProvider
+	AdminToken middleware.TokenProvider
+	// Sources is the compile-in source registry. May be nil in tests.
+	Sources *sources.Registry
+	// DefaultSource is the source name used when callers don't supply one.
+	DefaultSource  string
 	SPAFS          fs.FS
 	CORSOrigins    string
 	FrameAncestors string
 }
 
-// NewRouter builds a chi.Mux with DEVON's routes registered. Phase-A
-// scaffold: only health + an authenticated /api/v1 ping are mounted. Real
-// API handlers land in later PRs.
+// NewRouter builds a chi.Mux with DEVON's routes registered.
 func NewRouter(cfg *RouterConfig) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -54,6 +57,11 @@ func NewRouter(cfg *RouterConfig) *chi.Mux {
 
 			// Scaffold ping — confirms auth works end-to-end.
 			r.Get("/ping", handlers.Ping)
+
+			if cfg.Sources != nil {
+				searchH := handlers.NewSearchHandler(cfg.Sources, cfg.DefaultSource, cfg.Logger)
+				r.Get("/search", searchH.Search)
+			}
 		})
 	})
 

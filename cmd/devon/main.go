@@ -24,6 +24,8 @@ import (
 	"github.com/flag-ai/devon/internal/api"
 	"github.com/flag-ai/devon/internal/config"
 	"github.com/flag-ai/devon/internal/db"
+	"github.com/flag-ai/devon/internal/sources"
+	"github.com/flag-ai/devon/internal/sources/huggingface"
 	"github.com/flag-ai/devon/web"
 )
 
@@ -115,8 +117,13 @@ func serve() error {
 	var adminToken atomic.Value
 	adminToken.Store(cfg.AdminToken)
 
-	// Embedded SPA frontend. In the scaffold PR this is the .gitkeep-only
-	// dist — frontend lands in PR E.
+	// Compile-in source registry. v1 ships HuggingFace only; adding new
+	// sources is additive (see internal/sources/source.go).
+	sourceRegistry := sources.NewRegistry()
+	sourceRegistry.Register(huggingface.New(cfg.HuggingFaceToken))
+
+	// Embedded SPA frontend. The real SPA lands in PR E; until then the
+	// embedded FS contains only .gitkeep.
 	spaFS, err := fs.Sub(web.Dist, "dist")
 	if err != nil {
 		return fmt.Errorf("embedded SPA filesystem: %w", err)
@@ -129,6 +136,8 @@ func serve() error {
 			v, _ := adminToken.Load().(string)
 			return v
 		},
+		Sources:        sourceRegistry,
+		DefaultSource:  huggingface.Name,
 		SPAFS:          spaFS,
 		CORSOrigins:    cfg.CORSOrigins,
 		FrameAncestors: cfg.FrameAncestors,
