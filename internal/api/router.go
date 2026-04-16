@@ -11,7 +11,19 @@ import (
 	"github.com/flag-ai/devon/internal/api/handlers"
 	"github.com/flag-ai/devon/internal/api/middleware"
 	"github.com/flag-ai/devon/internal/sources"
+	"github.com/flag-ai/devon/internal/storage"
 )
+
+// Deps bundles the services routes need so RouterConfig stays readable.
+type Deps struct {
+	Agents       *storage.BonnieAgents
+	Models       *storage.Models
+	Placements   *storage.Placements
+	Jobs         *storage.DownloadJobs
+	Sources      *sources.Registry
+	BonnieKicker handlers.BonnieRegistryKicker
+	Runner       handlers.DownloadRunner
+}
 
 // RouterConfig holds all dependencies needed to build the HTTP router.
 type RouterConfig struct {
@@ -21,10 +33,10 @@ type RouterConfig struct {
 	// getter (rather than a string) so /setup can update the live value
 	// atomically without rebuilding the router.
 	AdminToken middleware.TokenProvider
-	// Sources is the compile-in source registry. May be nil in tests.
-	Sources *sources.Registry
-	// DefaultSource is the source name used when callers don't supply one.
+	// DefaultSource is the source name used when /search callers don't
+	// supply one.
 	DefaultSource  string
+	Deps           Deps
 	SPAFS          fs.FS
 	CORSOrigins    string
 	FrameAncestors string
@@ -55,12 +67,36 @@ func NewRouter(cfg *RouterConfig) *chi.Mux {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireAuth(cfg.AdminToken))
 
-			// Scaffold ping — confirms auth works end-to-end.
+			// Scaffold ping.
 			r.Get("/ping", handlers.Ping)
 
-			if cfg.Sources != nil {
-				searchH := handlers.NewSearchHandler(cfg.Sources, cfg.DefaultSource, cfg.Logger)
+			if cfg.Deps.Sources != nil {
+				searchH := handlers.NewSearchHandler(cfg.Deps.Sources, cfg.DefaultSource, cfg.Logger)
 				r.Get("/search", searchH.Search)
+			}
+
+			if cfg.Deps.Agents != nil {
+				agentH := handlers.NewBonnieAgentsHandler(cfg.Deps.Agents, cfg.Deps.BonnieKicker, cfg.Logger)
+				r.Get("/bonnie-agents", agentH.List)
+				r.Post("/bonnie-agents", agentH.Create)
+				r.Delete("/bonnie-agents/{id}", agentH.Delete)
+			}
+
+			if cfg.Deps.Jobs != nil && cfg.Deps.Models != nil && cfg.Deps.Placements != nil {
+				downloadH := handlers.NewDownloadsHandler(
+					cfg.Deps.Jobs,
+					cfg.Deps.Models,
+					cfg.Deps.Placements,
+					cfg.Deps.Agents,
+					cfg.Deps.Sources,
+					cfg.Deps.Runner,
+					cfg.Logger,
+				)
+				r.Post("/models/download", downloadH.Start)
+				r.Get("/downloads", downloadH.List)
+				r.Get("/downloads/{id}", downloadH.Get)
+				r.Post("/downloads/{id}/restart", downloadH.Restart)
+				r.Post("/models/ensure", downloadH.Ensure)
 			}
 		})
 	})
