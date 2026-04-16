@@ -24,6 +24,7 @@ import (
 	fbonnie "github.com/flag-ai/commons/bonnie"
 
 	"github.com/flag-ai/devon/internal/api"
+	"github.com/flag-ai/devon/internal/api/handlers"
 	devonbonnie "github.com/flag-ai/devon/internal/bonnie"
 	"github.com/flag-ai/devon/internal/config"
 	"github.com/flag-ai/devon/internal/db"
@@ -34,6 +35,19 @@ import (
 	"github.com/flag-ai/devon/internal/storage"
 	"github.com/flag-ai/devon/web"
 )
+
+// adminTokenBridge adapts the atomic.Value-backed admin token to the
+// handlers.AdminTokenWriter interface used by /setup.
+type adminTokenBridge struct {
+	v *atomic.Value
+}
+
+func (a *adminTokenBridge) Get() string {
+	v, _ := a.v.Load().(string)
+	return v
+}
+
+func (a *adminTokenBridge) Set(s string) { a.v.Store(s) }
 
 // bonnieHealthPollInterval matches KARR's registry cadence.
 const bonnieHealthPollInterval = 30 * time.Second
@@ -125,6 +139,22 @@ func serve() error {
 	// Live admin token — wrapped in an atomic.Value so /setup can swap it.
 	var adminToken atomic.Value
 	adminToken.Store(cfg.AdminToken)
+	adminTokenRW := &adminTokenBridge{v: &adminToken}
+
+	// Seed config + secrets stores for the web UI. Secrets are the
+	// sensitive tokens we already know about at startup; config captures
+	// non-secret settings the operator may want to tweak at runtime.
+	configStore := handlers.NewConfigStore(map[string]any{
+		"default_source":  huggingface.Name,
+		"listen_addr":     cfg.ListenAddr,
+		"log_level":       cfg.LogLevel,
+		"cors_origins":    cfg.CORSOrigins,
+		"frame_ancestors": cfg.FrameAncestors,
+	})
+	secretsStore := handlers.NewSecretsStore(map[string]string{
+		"admin_token": cfg.AdminToken,
+		"hf_token":    cfg.HuggingFaceToken,
+	})
 
 	// sqlc queries and storage wrappers.
 	queries := sqlc.New(pool)
@@ -147,6 +177,10 @@ func serve() error {
 	bonnieRegistry.Start(ctx)
 	bonnieService := devonbonnie.NewService(bonnieRegistry, logger)
 
+	// Register the BONNIE readiness check so /ready reflects agent
+	// reachability in a single aggregated signal.
+	healthRegistry.Register(handlers.NewBonnieChecker(bonnieRegistry))
+
 	// Download runner.
 	runner := download.NewRunner(jobStore, modelStore, placementStore, agentStore, bonnieService, logger)
 	go runner.Start(ctx)
@@ -167,13 +201,18 @@ func serve() error {
 		},
 		DefaultSource: huggingface.Name,
 		Deps: api.Deps{
-			Agents:       agentStore,
-			Models:       modelStore,
-			Placements:   placementStore,
-			Jobs:         jobStore,
-			Sources:      sourceRegistry,
-			BonnieKicker: bonnieRegistry,
-			Runner:       runner,
+			Agents:        agentStore,
+			Models:        modelStore,
+			Placements:    placementStore,
+			Jobs:          jobStore,
+			Sources:       sourceRegistry,
+			BonnieKicker:  bonnieRegistry,
+			BonnieLister:  bonnieService,
+			BonnieDeleter: bonnieService,
+			Runner:        runner,
+			ConfigStore:   configStore,
+			Secrets:       secretsStore,
+			AdminToken:    adminTokenRW,
 		},
 		SPAFS:          spaFS,
 		CORSOrigins:    cfg.CORSOrigins,
