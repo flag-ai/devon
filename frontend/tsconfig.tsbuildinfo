@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/api/client.ts","./src/components/AuthGate.tsx","./src/components/Layout.tsx","./src/components/SetupBanner.tsx","./src/components/SetupPage.tsx","./src/pages/Dashboard.tsx","./src/pages/Downloads.tsx","./src/pages/Models.tsx","./src/pages/Search.tsx","./src/pages/Settings.tsx"],"version":"5.9.3"}
