@@ -121,13 +121,6 @@ func (h *ScanHandler) scanOne(ctx context.Context, a *storage.Agent) scanResult 
 		}
 		rec, mErr := h.models.GetByIdentity(ctx, e.Source, e.ModelID)
 		if mErr != nil {
-			// Upsert a bare metadata shell — the source plugin fills in
-			// the details on the next /models/ensure.
-			var shell = struct {
-				Source  string
-				ModelID string
-			}{Source: e.Source, ModelID: e.ModelID}
-			_ = shell // future use; placeholder while we decide what to do
 			h.logger.Debug("scan: skipping unknown model", "source", e.Source, "model_id", e.ModelID)
 			continue
 		}
