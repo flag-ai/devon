@@ -149,15 +149,18 @@ func (q *Queries) MarkDownloadJobFailed(ctx context.Context, arg MarkDownloadJob
 	return err
 }
 
-const markDownloadJobRunning = `-- name: MarkDownloadJobRunning :exec
+const markDownloadJobRunning = `-- name: MarkDownloadJobRunning :execrows
 UPDATE devon_download_jobs
 SET status = 'running', started_at = now(), updated_at = now()
-WHERE id = $1
+WHERE id = $1 AND status = 'pending'
 `
 
-func (q *Queries) MarkDownloadJobRunning(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, markDownloadJobRunning, id)
-	return err
+func (q *Queries) MarkDownloadJobRunning(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, markDownloadJobRunning, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const markDownloadJobSucceeded = `-- name: MarkDownloadJobSucceeded :exec

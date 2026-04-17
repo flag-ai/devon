@@ -24,6 +24,11 @@ import (
 // DefaultPollInterval is used when the Runner's Interval field is zero.
 const DefaultPollInterval = 5 * time.Second
 
+// maxConcurrentDownloads caps parallel goroutines in drain() to avoid
+// overwhelming BONNIE with simultaneous fetch requests (e.g. after a
+// restart with many pending jobs).
+const maxConcurrentDownloads = 5
+
 // Runner owns the background job loop.
 type Runner struct {
 	jobs       *storage.DownloadJobs
@@ -105,17 +110,22 @@ func (r *Runner) waitForTrigger() <-chan struct{} {
 	return r.trigger
 }
 
-// drain scans for pending jobs and hands each one to runJob.
-// Parallelism is natural — each job runs in its own goroutine.
+// drain scans for pending jobs and hands each one to runJob, capping
+// concurrency with a buffered-channel semaphore.
 func (r *Runner) drain(ctx context.Context) {
 	pending, err := r.jobs.ListPending(ctx)
 	if err != nil {
 		r.logger.Error("download: list pending failed", "error", err)
 		return
 	}
+	sem := make(chan struct{}, maxConcurrentDownloads)
 	for i := range pending {
 		j := pending[i]
-		go r.runJob(ctx, &j)
+		sem <- struct{}{} // acquire slot (blocks if at capacity)
+		go func() {
+			defer func() { <-sem }() // release slot
+			r.runJob(ctx, &j)
+		}()
 	}
 }
 
@@ -123,8 +133,13 @@ func (r *Runner) drain(ctx context.Context) {
 // flips the job to succeeded/failed. It never panics — defer ensures a
 // top-level failure path even if the db or bonnie misbehaves.
 func (r *Runner) runJob(ctx context.Context, job *storage.Job) {
-	if err := r.jobs.MarkRunning(ctx, job.ID); err != nil {
+	claimed, err := r.jobs.MarkRunning(ctx, job.ID)
+	if err != nil {
 		r.logger.Error("download: mark running", "job_id", job.ID, "error", err)
+		return
+	}
+	if !claimed {
+		// Another goroutine (overlapping drain) already picked this job up.
 		return
 	}
 

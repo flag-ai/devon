@@ -108,9 +108,16 @@ func (s *DownloadJobs) ListPending(ctx context.Context) ([]Job, error) {
 	return out, nil
 }
 
-// MarkRunning transitions a job to "running" and stamps started_at.
-func (s *DownloadJobs) MarkRunning(ctx context.Context, id uuid.UUID) error {
-	return wrapJobErr(s.q.MarkDownloadJobRunning(ctx, toPgUUID(id)), "mark running")
+// MarkRunning atomically transitions a pending job to "running" and
+// stamps started_at. Returns true if the row was claimed (i.e. it was
+// still pending). Returns false with no error when another goroutine
+// already claimed the job.
+func (s *DownloadJobs) MarkRunning(ctx context.Context, id uuid.UUID) (bool, error) {
+	n, err := s.q.MarkDownloadJobRunning(ctx, toPgUUID(id))
+	if err != nil {
+		return false, wrapJobErr(err, "mark running")
+	}
+	return n > 0, nil
 }
 
 // MarkSucceeded transitions a job to "succeeded" and clears the error.
