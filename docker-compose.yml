@@ -21,7 +21,7 @@ services:
       args:
         VERSION: dev
         COMMIT: local
-        BUILD_DATE: "2026-04-16"
+        BUILD_DATE: ${BUILD_DATE:-unknown}
     ports:
       - "${DEVON_PORT:-8080}:8080"
     environment:
