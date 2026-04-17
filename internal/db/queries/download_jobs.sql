@@ -12,10 +12,10 @@ INSERT INTO devon_download_jobs (model_id, bonnie_agent_id, status, patterns)
 VALUES ($1, $2, 'pending', $3)
 RETURNING *;
 
--- name: MarkDownloadJobRunning :exec
+-- name: MarkDownloadJobRunning :execrows
 UPDATE devon_download_jobs
 SET status = 'running', started_at = now(), updated_at = now()
-WHERE id = $1;
+WHERE id = $1 AND status = 'pending';
 
 -- name: MarkDownloadJobSucceeded :exec
 UPDATE devon_download_jobs
