@@ -21,13 +21,22 @@ import (
 	"github.com/flag-ai/commons/secrets"
 	"github.com/flag-ai/commons/version"
 
+	fbonnie "github.com/flag-ai/commons/bonnie"
+
 	"github.com/flag-ai/devon/internal/api"
+	devonbonnie "github.com/flag-ai/devon/internal/bonnie"
 	"github.com/flag-ai/devon/internal/config"
 	"github.com/flag-ai/devon/internal/db"
+	"github.com/flag-ai/devon/internal/db/sqlc"
+	"github.com/flag-ai/devon/internal/download"
 	"github.com/flag-ai/devon/internal/sources"
 	"github.com/flag-ai/devon/internal/sources/huggingface"
+	"github.com/flag-ai/devon/internal/storage"
 	"github.com/flag-ai/devon/web"
 )
+
+// bonnieHealthPollInterval matches KARR's registry cadence.
+const bonnieHealthPollInterval = 30 * time.Second
 
 func main() {
 	if err := run(); err != nil {
@@ -117,10 +126,30 @@ func serve() error {
 	var adminToken atomic.Value
 	adminToken.Store(cfg.AdminToken)
 
+	// sqlc queries and storage wrappers.
+	queries := sqlc.New(pool)
+	agentStore := storage.NewBonnieAgents(queries)
+	modelStore := storage.NewModels(queries)
+	placementStore := storage.NewPlacements(queries)
+	jobStore := storage.NewDownloadJobs(queries)
+
 	// Compile-in source registry. v1 ships HuggingFace only; adding new
 	// sources is additive (see internal/sources/source.go).
 	sourceRegistry := sources.NewRegistry()
 	sourceRegistry.Register(huggingface.New(cfg.HuggingFaceToken))
+
+	// BONNIE registry backed by devon_bonnie_agents.
+	bonnieRegistry := fbonnie.NewRegistry(
+		agentStore.BonnieRegistryStore(),
+		bonnieHealthPollInterval,
+		logger,
+	)
+	bonnieRegistry.Start(ctx)
+	bonnieService := devonbonnie.NewService(bonnieRegistry, logger)
+
+	// Download runner.
+	runner := download.NewRunner(jobStore, modelStore, placementStore, agentStore, bonnieService, logger)
+	go runner.Start(ctx)
 
 	// Embedded SPA frontend. The real SPA lands in PR E; until then the
 	// embedded FS contains only .gitkeep.
@@ -136,8 +165,16 @@ func serve() error {
 			v, _ := adminToken.Load().(string)
 			return v
 		},
-		Sources:        sourceRegistry,
-		DefaultSource:  huggingface.Name,
+		DefaultSource: huggingface.Name,
+		Deps: api.Deps{
+			Agents:       agentStore,
+			Models:       modelStore,
+			Placements:   placementStore,
+			Jobs:         jobStore,
+			Sources:      sourceRegistry,
+			BonnieKicker: bonnieRegistry,
+			Runner:       runner,
+		},
 		SPAFS:          spaFS,
 		CORSOrigins:    cfg.CORSOrigins,
 		FrameAncestors: cfg.FrameAncestors,
