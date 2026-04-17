@@ -16,13 +16,18 @@ import (
 
 // Deps bundles the services routes need so RouterConfig stays readable.
 type Deps struct {
-	Agents       *storage.BonnieAgents
-	Models       *storage.Models
-	Placements   *storage.Placements
-	Jobs         *storage.DownloadJobs
-	Sources      *sources.Registry
-	BonnieKicker handlers.BonnieRegistryKicker
-	Runner       handlers.DownloadRunner
+	Agents        *storage.BonnieAgents
+	Models        *storage.Models
+	Placements    *storage.Placements
+	Jobs          *storage.DownloadJobs
+	Sources       *sources.Registry
+	BonnieKicker  handlers.BonnieRegistryKicker
+	BonnieLister  handlers.BonnieLister
+	BonnieDeleter handlers.BonnieDeleter
+	Runner        handlers.DownloadRunner
+	ConfigStore   *handlers.ConfigStore
+	Secrets       *handlers.SecretsStore
+	AdminToken    handlers.AdminTokenWriter
 }
 
 // RouterConfig holds all dependencies needed to build the HTTP router.
@@ -60,8 +65,13 @@ func NewRouter(cfg *RouterConfig) *chi.Mux {
 	// /api/v1 tree.
 	r.Route("/api/v1", func(r chi.Router) {
 		// /setup is carved out so fresh deployments can provision an
-		// admin token. Real handler lands in PR D.
-		r.Post("/setup", handlers.NotImplementedHandler("POST /api/v1/setup"))
+		// admin token.
+		if cfg.Deps.AdminToken != nil {
+			setupH := handlers.NewSetupHandler(cfg.Deps.AdminToken, cfg.Logger)
+			r.Post("/setup", setupH.Setup)
+		} else {
+			r.Post("/setup", handlers.NotImplementedHandler("POST /api/v1/setup"))
+		}
 
 		// Authenticated scope.
 		r.Group(func(r chi.Router) {
@@ -97,6 +107,43 @@ func NewRouter(cfg *RouterConfig) *chi.Mux {
 				r.Get("/downloads/{id}", downloadH.Get)
 				r.Post("/downloads/{id}/restart", downloadH.Restart)
 				r.Post("/models/ensure", downloadH.Ensure)
+
+				modelsH := handlers.NewModelsHandler(
+					cfg.Deps.Models,
+					cfg.Deps.Placements,
+					cfg.Deps.Agents,
+					cfg.Deps.BonnieDeleter,
+					cfg.Logger,
+				)
+				r.Get("/models", modelsH.List)
+				r.Get("/models/{source}/{model_id}", modelsH.Get)
+				r.Delete("/models/{source}/{model_id}", modelsH.Delete)
+
+				exportH := handlers.NewExportHandler(cfg.Deps.Models, cfg.Deps.Placements, cfg.Logger)
+				r.Post("/export", exportH.Export)
+			}
+
+			if cfg.Deps.Agents != nil && cfg.Deps.Models != nil && cfg.Deps.Placements != nil && cfg.Deps.BonnieLister != nil {
+				scanH := handlers.NewScanHandler(
+					cfg.Deps.Agents,
+					cfg.Deps.Models,
+					cfg.Deps.Placements,
+					cfg.Deps.BonnieLister,
+					cfg.Logger,
+				)
+				r.Post("/scan", scanH.Scan)
+			}
+
+			if cfg.Deps.ConfigStore != nil {
+				configH := handlers.NewConfigHandler(cfg.Deps.ConfigStore, cfg.Logger)
+				r.Get("/config", configH.Get)
+				r.Put("/config", configH.Put)
+			}
+
+			if cfg.Deps.Secrets != nil {
+				secretsH := handlers.NewSecretsHandler(cfg.Deps.Secrets, cfg.Logger)
+				r.Get("/config/secrets", secretsH.Get)
+				r.Put("/config/secrets", secretsH.Put)
 			}
 		})
 	})
