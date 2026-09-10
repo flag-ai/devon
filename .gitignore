@@ -1,3 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
 # IDE
 .idea/
 .vscode/
@@ -5,30 +21,33 @@
 *.swo
 *~
 
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Distribution
+*.tar.gz
+*.whl
+
 # OS
 .DS_Store
 Thumbs.db
 
+# MkDocs
+site/
+
 # Claude
 .claude/
+
+# Frontend build output
+src/devon/ui/static/
 
 # Environment files
 .env
 .env.local
 .env.*.local
 
-# Logs
+# Project specific
 *.log
-
-# --- Go ---
-/devon
-coverage.out
-coverage.html
-*.test
-*.out
-
-# --- Node (web/) ---
-web/node_modules/
-web/dist/
-!web/dist/.gitkeep
-web/tsconfig.tsbuildinfo
