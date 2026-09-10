@@ -7,6 +7,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from devon import __version__
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -50,7 +51,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="DEVON API",
         description="REST API for DEVON — model discovery and management",
-        version="1.3.0",
+        version=__version__,
         lifespan=lifespan,
     )
 

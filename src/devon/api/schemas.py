@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
+from devon import __version__
 from pydantic import BaseModel, Field
 
 
@@ -10,7 +11,7 @@ from pydantic import BaseModel, Field
 
 class HealthResponse(BaseModel):
     status: str = "ok"
-    version: str = "1.3.0"
+    version: str = __version__
 
 
 # --- Model result (shared) ---
