@@ -1,0 +1,21 @@
+# DEVON Configuration
+
+storage:
+  base_path: ~/.cache/devon/models
+  max_size_gb: null  # null = unlimited
+
+download:
+  resume: true
+  verify_checksums: true
+
+sources:
+  default: huggingface
+  enabled:
+    - huggingface
+
+search:
+  default_limit: 20
+  sort_by: downloads
+
+display:
+  color: true

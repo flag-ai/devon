@@ -1,43 +1,16 @@
-.PHONY: dev test test-integration lint security sqlc build build-web docker docker-up docker-down
+.PHONY: build-ui install-ui dev-ui clean-ui
 
-# Development
-dev:
-	docker compose up -d postgres
-	@echo "Postgres started. Run 'go run ./cmd/devon serve' and 'cd web && npm run dev'"
+FRONTEND_DIR := frontend
+STATIC_DIR := src/devon/ui/static
 
-# Testing
-test:
-	go test -race -coverprofile=coverage.out ./...
-	@echo "Coverage:"
-	@go tool cover -func=coverage.out | tail -1
+install-ui:
+	cd $(FRONTEND_DIR) && npm install
 
-test-integration:
-	go test -race -tags integration ./tests/...
+build-ui: install-ui
+	cd $(FRONTEND_DIR) && npm run build
 
-# Code quality
-lint:
-	golangci-lint run ./...
+dev-ui:
+	cd $(FRONTEND_DIR) && npm run dev
 
-security:
-	gosec ./...
-
-# Code generation
-sqlc:
-	sqlc generate
-
-# Build
-build:
-	go build -o devon ./cmd/devon
-
-build-web:
-	cd web && npm ci && npm run build
-
-# Docker
-docker:
-	docker compose build
-
-docker-up:
-	docker compose up
-
-docker-down:
-	docker compose down
+clean-ui:
+	rm -rf $(STATIC_DIR)

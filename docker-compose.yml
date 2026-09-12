@@ -1,39 +1,17 @@
 services:
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-devon}
-      POSTGRES_USER: ${POSTGRES_USER:-devon}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devon}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   devon:
-    build:
-      context: .
-      args:
-        VERSION: dev
-        COMMIT: local
-        BUILD_DATE: ${BUILD_DATE:-unknown}
+    build: .
     ports:
-      - "${DEVON_PORT:-8080}:8080"
+      - "${DEVON_PORT:-8000}:8000"
+    volumes:
+      - "${DEVON_DATA_PATH:-devon-data}:/data"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-devon}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-devon}?sslmode=disable
-      DEVON_ADMIN_TOKEN: ${DEVON_ADMIN_TOKEN:-}
-      DEVON_CORS_ORIGINS: ${DEVON_CORS_ORIGINS:-}
-      DEVON_FRAME_ANCESTORS: ${DEVON_FRAME_ANCESTORS:-}
-      HF_TOKEN: ${HF_TOKEN:-}
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - HF_TOKEN=${HF_TOKEN:-}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     restart: unless-stopped
-
-volumes:
-  pgdata:
