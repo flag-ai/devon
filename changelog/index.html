@@ -1334,6 +1334,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#120" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1401,6 +1412,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#130" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#120" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1455,6 +1477,16 @@
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
 <p>All notable changes to DEVON are documented in this file.</p>
+<h2 id="130">1.3.0<a class="headerlink" href="#130" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Rolled back to the Python implementation</strong> — <code>main</code> now carries the Python tree again after the Go rewrite (2.0.0–2.4.1) was retired<ul>
+<li>The Go code is preserved in the <code>go-migration-2.4.1</code> tag and in <code>main</code>'s history; the 2.x version line is permanently retired</li>
+<li>Versions resume at 1.3.0 so the number never moves backwards</li>
+</ul>
+</li>
+<li>Version string aligned with this changelog (<code>pyproject.toml</code> and <code>__version__</code> had stayed at 1.0.0 through the 1.1.0 and 1.2.0 releases)</li>
+<li><code>/health</code> now reports the current package version</li>
+</ul>
 <h2 id="120">1.2.0<a class="headerlink" href="#120" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Model manifest</strong> — model tracking index moved from <code>index.json</code> (outside models dir) to <code>manifest.json</code> inside the models directory root<ul>
